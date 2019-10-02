@@ -1,0 +1,36 @@
+    ---
+    title: "Data-processing"
+    output: rmarkdown::github_document
+    ---
+    
+    #Libraries and parameters
+    ```{r}
+    library(tidyverse)
+    ```
+    
+    ```{r}
+    file_2019_opening1 <- "~/Autumn-2019/COMM177b/rising-waters/2019-Opening1.xlsx"
+    
+    file_2019_opening2 <- "~/Autumn-2019/COMM177b/rising-waters/2019-Openin2.xlsx"
+    
+    file_2018_opening1 <- "~/Autumn-2019/COMM177b/rising-waters/2018-Opening1.xlsx"
+    
+    file_2016_opening1 <- "~/Autumn-2019/COMM177b/rising-waters/2016-Opening1.xlsx"
+    ```
+    
+    #Load data
+    ```{r}
+    raw_2019_opening1 <- read_excel(file_2019_opening1)
+    ```
+    
+    
+    #Modify data tables for easier future editing
+    ```{r}
+    fixed_2019_opening1 <- 
+      raw_2019_opening1 %>%
+      rename("day" = Day, "date" = Date, "bays_opened" = `Bays Opened`, "total_opened" = `Total Opened`, "discharge" = Discharge) %>% 
+      mutate(discharge = word(discharge, 1))
+    ```
+    
+    
+    #Put data in .Rds format for future manipulations
