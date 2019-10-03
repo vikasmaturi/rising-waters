@@ -3,6 +3,10 @@ title: "Data-analysis"
 output: github_document
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
 #Libraries and Parameters
 ```{r}
 library(tidyverse) #used for easy data manipulation
