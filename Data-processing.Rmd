@@ -1,8 +1,6 @@
 ---
 title: "Data-processing"
-output:
-  md_document:
-    variant: markdown_github
+output: md_document
 ---
 
 This file takes in Excel data copied from the Army Corps of Engineers website and turns it into cleaned .Rmd files. The data looks at openings of the Bonnet Carre spillway and associated water flows.
@@ -44,7 +42,7 @@ raw_2016_opening1 <- read_excel(file_2016_opening1)
 
 #Modify data tables for easier future editing
 ```{r}
-#this adjusts the 2019-opening-1 data to correct for type, unit, and grammatical errors
+#adjusts the 2019-opening-1 data to correct for type, unit, and grammatical errors
 fixed_2019_opening1 <- 
   raw_2019_opening1 %>%
   
@@ -61,20 +59,37 @@ fixed_2019_opening1 <-
   mutate(date = mdy(date)) %>% 
   
   #turn discharge column into a numeric value (rather than string) for easier plotting
-  mutate(discharge = as.numeric(sub(",", "", discharge)))
+  mutate(discharge = as.numeric(sub(",", "", discharge))) %>% 
+  
+  #add column to identify which opening
+  mutate(opening_id = "2019-1")
 
 ```
 
 ```{r}
-##Data from 2019-opening-2 was already in the correct form
+##adjusts the 2019-opening-1 data to correct for type, unit, and grammatical errors
 fixed_2019_opening2 <- 
   raw_2019_opening2 %>% 
-  rename("days_open" = Day, "date" = Date, "bays_opened" = `Bays Opened`, "total_opened" = `Total Opened`, "discharge" = Discharge)  
+  rename("days_open" = Day, "date" = Date, "bays_opened" = `Bays Opened`, "total_opened" = `Total Opened`, "discharge" = Discharge)  %>% 
+  
+  # change date to be in "Date" format
+  mutate(date = as_date(date)) %>% 
+
+  #extract the first "word" from discharge column to remove units
+  mutate(discharge = word(discharge, 1)) %>% 
+
+ #turn discharge column into a numeric value (rather than string) for easier plotting
+  mutate(discharge = as.numeric(sub(",", "", discharge))) %>% 
+
+  #add column to identify which opening
+  mutate(opening_id = "2019-2")
+
+
 
 ```
 
 ```{r}
-##this adjusts the 2018-opening-1 data to correct for type, unit, and grammatical errors
+##adjusts the 2018-opening-1 data to correct for type, unit, and grammatical errors
 fixed_2018_opening1 <- 
   raw_2018_opening1 %>%
   
@@ -91,12 +106,15 @@ fixed_2018_opening1 <-
   mutate(date = mdy(date)) %>% 
   
   #turn discharge column into a numeric value (rather than string) for easier plotting
-  mutate(discharge = as.numeric(sub(",", "", discharge)))
+  mutate(discharge = as.numeric(sub(",", "", discharge))) %>% 
+  
+  #add column to identify which opening
+  mutate(opening_id = "2018-1")
 
 ```
 
 ```{r}
-##this adjusts the 2016-opening-1 data to correct for type, unit, and grammatical errors
+##adjusts the 2016-opening-1 data to correct for type, unit, and grammatical errors
 fixed_2016_opening1 <- 
   raw_2016_opening1 %>%
   
@@ -112,10 +130,25 @@ fixed_2016_opening1 <-
   unite(col = "date", month, day_of_month, year, sep = " ") %>% 
   mutate(date = mdy(date)) %>% 
   
-  #turn discharge column into a numeric value (rather than string) for easier plotting
-  mutate(discharge = as.numeric(sub(",", "", discharge)))
+  #turn discharge, total_opened, and bays_opened columns into a numeric value (rather than string) for easier plotting,
+  mutate(discharge = as.numeric(sub(",", "", discharge)), total_opened = as.numeric(total_opened), bays_opened = as.numeric(bays_opened)) %>% 
+  mutate(discharge = if_else(is.na(discharge), 0, discharge)) %>% 
+  
+  #add column to identify which opening
+  mutate(opening_id = "2016-1")
+
+
 ```
 
+
+
+```{r}
+
+str(fixed_2019_opening1)
+str(fixed_2019_opening2)
+str(fixed_2018_opening1)
+str(fixed_2016_opening1)
+```
 
 #Put data in .Rds format for future manipulations
 ```{r}
