@@ -41,7 +41,8 @@ openings <-
   bind_rows(opening2_2019) %>% 
   bind_rows(opening1_2018) %>% 
   bind_rows(opening1_2016) %>%
-  mutate(year = year(date))
+  mutate(year = year(date)) #add year column - likely useful in future
+
 ```
 
 
@@ -70,6 +71,26 @@ total_water_discharged %>%
   
 ```
 
+
+```{r}
+openings %>% 
+  ggplot(mapping = aes(x = days_open, y = discharge)) +
+  geom_line(aes(color = opening_id)) +
+  theme_light() +
+  theme(
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom"
+  ) +
+  labs(
+    title = "Water discharged per day course of spillway openings",
+    x = "Day of opening",
+    y = "TWater discharged"
+  ) +
+  guides(color = guide_legend(title = "Opening Year & Number"))
+```
+
+
+
 How has the progression of bay release patterns (number of individual bays opened) changed for successive openings? Hundreds of bays make up the Bonnet Carre spillway
 ```{r}
 openings %>%
@@ -77,7 +98,8 @@ openings %>%
   geom_line(aes(group = opening_id, color = opening_id)) +
   theme_light() + 
   theme(
-    panel.grid.minor = element_blank()
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom"
   ) +
   labs(
     title = "Total bays open over course of spillway openings",
@@ -86,4 +108,6 @@ openings %>%
   ) +
   guides(color = guide_legend(title = "Opening Year & Number")) 
 ```
+
+
 

@@ -62,7 +62,10 @@ fixed_2019_opening1 <-
   mutate(discharge = as.numeric(sub(",", "", discharge))) %>% 
   
   #add column to identify which opening
-  mutate(opening_id = "2019-1")
+  mutate(opening_id = "2019-1") %>% 
+  
+  #add column with the cumulative sum of water discharged
+  mutate(cum_discharge = cumsum(discharge))
 
 ```
 
@@ -82,7 +85,10 @@ fixed_2019_opening2 <-
   mutate(discharge = as.numeric(sub(",", "", discharge))) %>% 
 
   #add column to identify which opening
-  mutate(opening_id = "2019-2")
+  mutate(opening_id = "2019-2") %>% 
+  
+  #add column with the cumulative sum of water discharged
+  mutate(cum_discharge = cumsum(discharge))
 
 
 
@@ -109,7 +115,10 @@ fixed_2018_opening1 <-
   mutate(discharge = as.numeric(sub(",", "", discharge))) %>% 
   
   #add column to identify which opening
-  mutate(opening_id = "2018-1")
+  mutate(opening_id = "2018-1") %>% 
+  
+  #add column with the cumulative sum of water discharged
+  mutate(cum_discharge = cumsum(discharge))
 
 ```
 
@@ -135,7 +144,10 @@ fixed_2016_opening1 <-
   mutate(discharge = if_else(is.na(discharge), 0, discharge)) %>% 
   
   #add column to identify which opening
-  mutate(opening_id = "2016-1")
+  mutate(opening_id = "2016-1") %>% 
+  
+  #add column with the cumulative sum of water discharged
+  mutate(cum_discharge = cumsum(discharge))
 
 
 ```
