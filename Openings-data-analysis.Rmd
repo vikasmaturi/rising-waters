@@ -1,13 +1,15 @@
 ---
 title: "Data-analysis"
-output: github_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
+``` 
 
-#Libraries and Parameters
+# Libraries and Parameters
 ```{r}
 library(tidyverse) #used for easy data manipulation
 library(lubridate) #used for date manipulation
@@ -22,7 +24,7 @@ file_opening1_2016 <- "~/Autumn-2019/COMM177b/rising-waters/2016-Opening1.Rds"
 
 ```
 
-#Loading Files
+# Loading Files
 ```{r}
 #Opening files into data tables (called tibbles) for manipulation in the program. We are not editing the raw file at all.
 opening1_2019 <- read_rds(file_opening1_2019)
@@ -31,7 +33,7 @@ opening1_2018 <- read_rds(file_opening1_2018)
 opening1_2016 <- read_rds(file_opening1_2016)
 ```
 
-#Combining Files
+# Combining Files
 ```{r}
 #combining all data into a single data frame (tibble), and adding a date column
 openings <-
@@ -43,7 +45,7 @@ openings <-
 ```
 
 
-#Exploratory Analysis
+# Exploratory Analysis
 
 How much water total was released in each opening? 
 ```{r}

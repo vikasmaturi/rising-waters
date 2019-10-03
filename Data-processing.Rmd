@@ -1,6 +1,6 @@
 ---
 title: "Data-processing"
-output: md_document
+output: github_document
 ---
 
 This file takes in Excel data copied from the Army Corps of Engineers website and turns it into cleaned .Rmd files. The data looks at openings of the Bonnet Carre spillway and associated water flows.
