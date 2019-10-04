@@ -1,8 +1,6 @@
 ---
 title: "Data-analysis"
-output:
-  html_document: default
-  pdf_document: default
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -109,5 +107,22 @@ openings %>%
   guides(color = guide_legend(title = "Opening Year & Number")) 
 ```
 
+```{r}
+openings %>% 
+  ggplot(mapping = aes(x = days_open, y = cum_discharge)) + 
+  geom_line(aes(color = opening_id)) +
+  theme_light() + 
+  theme(
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom"
+  ) +
+  labs(
+    title = "Cumulative water discharged for each spillway opening",
+    x = "Day of opening",
+    y = "Cumulative water discharged (cubic feet / second)"
+  ) +
+  guides(color = guide_legend(title = "Opening Year & Number")) 
+  
+```
 
 

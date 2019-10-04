@@ -1,8 +1,7 @@
 Data-analysis
 ================
 
-\#Libraries and
-    Parameters
+# Libraries and Parameters
 
 ``` r
 library(tidyverse) #used for easy data manipulation
@@ -38,8 +37,7 @@ file_opening1_2018 <- "~/Autumn-2019/COMM177b/rising-waters/2018-Opening1.Rds"
 file_opening1_2016 <- "~/Autumn-2019/COMM177b/rising-waters/2016-Opening1.Rds"
 ```
 
-\#Loading
-Files
+# Loading Files
 
 ``` r
 #Opening files into data tables (called tibbles) for manipulation in the program. We are not editing the raw file at all.
@@ -49,8 +47,7 @@ opening1_2018 <- read_rds(file_opening1_2018)
 opening1_2016 <- read_rds(file_opening1_2016)
 ```
 
-\#Combining
-Files
+# Combining Files
 
 ``` r
 #combining all data into a single data frame (tibble), and adding a date column
@@ -59,10 +56,10 @@ openings <-
   bind_rows(opening2_2019) %>% 
   bind_rows(opening1_2018) %>% 
   bind_rows(opening1_2016) %>%
-  mutate(year = year(date))
+  mutate(year = year(date)) #add year column - likely useful in future
 ```
 
-\#Exploratory Analysis
+# Exploratory Analysis
 
 How much water total was released in each opening?
 
@@ -89,6 +86,25 @@ total_water_discharged %>%
 
 ![](Openings-data-analysis_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
+``` r
+openings %>% 
+  ggplot(mapping = aes(x = days_open, y = discharge)) +
+  geom_line(aes(color = opening_id)) +
+  theme_light() +
+  theme(
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom"
+  ) +
+  labs(
+    title = "Water discharged per day course of spillway openings",
+    x = "Day of opening",
+    y = "TWater discharged"
+  ) +
+  guides(color = guide_legend(title = "Opening Year & Number"))
+```
+
+![](Openings-data-analysis_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
 How has the progression of bay release patterns (number of individual
 bays opened) changed for successive openings? Hundreds of bays make up
 the Bonnet Carre spillway
@@ -99,7 +115,8 @@ openings %>%
   geom_line(aes(group = opening_id, color = opening_id)) +
   theme_light() + 
   theme(
-    panel.grid.minor = element_blank()
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom"
   ) +
   labs(
     title = "Total bays open over course of spillway openings",
@@ -109,4 +126,4 @@ openings %>%
   guides(color = guide_legend(title = "Opening Year & Number")) 
 ```
 
-![](Openings-data-analysis_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](Openings-data-analysis_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
