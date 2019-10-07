@@ -1,5 +1,6 @@
-Data-analysis
+Openings-Data-Analysis
 ================
+Vikas Maturi
 
 # Libraries and Parameters
 
@@ -84,7 +85,7 @@ total_water_discharged %>%
   scale_y_continuous(labels = scales::comma, limits = c(0, 10000000))
 ```
 
-![](Openings-data-analysis_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+<img src="Openings-data-analysis_files/figure-gfm/unnamed-chunk-6-1.png" width="100%" />
 
 ``` r
 openings %>% 
@@ -103,7 +104,7 @@ openings %>%
   guides(color = guide_legend(title = "Opening Year & Number"))
 ```
 
-![](Openings-data-analysis_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+<img src="Openings-data-analysis_files/figure-gfm/unnamed-chunk-7-1.png" width="100%" />
 
 How has the progression of bay release patterns (number of individual
 bays opened) changed for successive openings? Hundreds of bays make up
@@ -126,7 +127,7 @@ openings %>%
   guides(color = guide_legend(title = "Opening Year & Number")) 
 ```
 
-![](Openings-data-analysis_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+<img src="Openings-data-analysis_files/figure-gfm/unnamed-chunk-8-1.png" width="100%" />
 
 ``` r
 openings %>% 
@@ -138,11 +139,11 @@ openings %>%
     legend.position = "bottom"
   ) +
   labs(
-    title = "Cumulative water discharged for each spillway opening",
+    title = "Cumulative water discharged each day for each spillway opening",
     x = "Day of opening",
     y = "Cumulative water discharged (cubic feet / second)"
   ) +
   guides(color = guide_legend(title = "Opening Year & Number")) 
 ```
 
-![](Openings-data-analysis_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+<img src="Openings-data-analysis_files/figure-gfm/unnamed-chunk-9-1.png" width="100%" />

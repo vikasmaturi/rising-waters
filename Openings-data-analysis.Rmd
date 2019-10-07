@@ -1,11 +1,16 @@
 ---
-title: "Data-analysis"
-output: github_document
+title: "Openings-Data-Analysis"
+author: "Vikas Maturi"
+output: 
+  github_document:
+    toc: true
+    toc_depth: 6
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-``` 
+# knitr options
+knitr::opts_chunk$set(echo = TRUE, out.width = "100%")
+```
 
 # Libraries and Parameters
 ```{r}
@@ -117,7 +122,7 @@ openings %>%
     legend.position = "bottom"
   ) +
   labs(
-    title = "Cumulative water discharged for each spillway opening",
+    title = "Cumulative water discharged each day for each spillway opening",
     x = "Day of opening",
     y = "Cumulative water discharged (cubic feet / second)"
   ) +
