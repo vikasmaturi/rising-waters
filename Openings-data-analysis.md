@@ -127,3 +127,22 @@ openings %>%
 ```
 
 ![](Openings-data-analysis_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+
+``` r
+openings %>% 
+  ggplot(mapping = aes(x = days_open, y = cum_discharge)) + 
+  geom_line(aes(color = opening_id)) +
+  theme_light() + 
+  theme(
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom"
+  ) +
+  labs(
+    title = "Cumulative water discharged for each spillway opening",
+    x = "Day of opening",
+    y = "Cumulative water discharged (cubic feet / second)"
+  ) +
+  guides(color = guide_legend(title = "Opening Year & Number")) 
+```
+
+![](Openings-data-analysis_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
