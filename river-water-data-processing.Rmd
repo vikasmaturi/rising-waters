@@ -1,0 +1,28 @@
+---
+title: "river-quality-data-processing"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Libraries and Parameters
+```{r}
+library(tidyverse)
+library(rvest)
+```
+
+```{r}
+url_data <- "https://nwis.waterdata.usgs.gov/ms/nwis/uv?cb_00010=on&cb_00065=on&cb_00480=on&format=html&site_no=301429089145600&period=&begin_date=2018-11-30&end_date=2019-10-03"
+
+```
+
+```{r}
+
+read_html(url_data) %>% 
+  html_node(css = "body > table.tablesorter.dataListWithSuperscript.tablesorter-jui.ui-widget.ui-widget-content.ui-corner-all.hasStickyHeaders.hasFilters > tbody") %>% 
+  html_table()
+```
+ 
+ 
