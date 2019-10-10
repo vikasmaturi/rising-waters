@@ -1,0 +1,70 @@
+---
+title: "Campaign-finance-analysis"
+author: "Vikas Maturi"
+output: 
+  github_document:
+    toc: true
+    toc_depth: 6
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Libraies
+```{r}
+#load libraries
+library(tidyverse)
+```
+
+
+
+#ONE TIME ONLY; READ IN FILES AND SAVE COMBINED DATA TO RDS
+
+```{r}
+#save data file names
+file_LA_contributions_101017_020918 <- "~/Autumn-2019/COMM177b/LA_contributions_101017_020918.csv"
+file_LA_contributions_021018_060918 <- "~/Autumn-2019/COMM177b/LA_contributions_021018_060918.csv"
+file_LA_contributions_061018_100918 <- "~/Autumn-2019/COMM177b/LA_contributions_061018_100918.csv"
+file_LA_contributions_101018_020919 <- "~/Autumn-2019/COMM177b/LA_contributions_101018_020919.csv"
+file_LA_contributions_021019_060919 <- "~/Autumn-2019/COMM177b/LA_contributions_021019_060919.csv"
+file_LA_contributions_061019_101019 <- "~/Autumn-2019/COMM177b/LA_contributions_061019-101019.csv"
+
+#save path to save file 
+file_save_combined_path <- "~/Autumn-2019/COMM177b/rising-waters/LA-contributions."
+```
+
+```{r}
+#read files into tibbles (data frames)
+LA_contributions_101017_020918 <- read_csv(file_LA_contributions_101017_020918)
+LA_contributions_021018_060918 <- read_csv(file_LA_contributions_021018_060918)
+LA_contributions_061018_100918 <- read_csv(file_LA_contributions_061018_100918)
+LA_contributions_101018_020919 <- read_csv(file_LA_contributions_101018_020919)
+LA_contributions_021019_060919 <- read_csv(file_LA_contributions_021019_060919)
+LA_contributions_061019_101019 <- read_csv(file_LA_contributions_061019_101019)
+```
+
+```{r}
+#Join data frames into single tibble (dataframe)
+LA_contributions <-
+  LA_contributions_061019_101019 %>% 
+  bind_rows(LA_contributions_021019_060919) %>% 
+  bind_rows(LA_contributions_101018_020919) %>% 
+  bind_rows(LA_contributions_061018_100918) %>% 
+  bind_rows(LA_contributions_021018_060918) %>% 
+  bind_rows(LA_contributions_101017_020918)
+```
+
+```{r}
+#Write combined data file out output .Rds file
+write_rds(LA_contributions, file_save_combined_path)
+```
+
+
+# Read in .Rds data file will all campaign finance data
+```{r}
+
+```
+
+
+

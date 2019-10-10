@@ -25,6 +25,8 @@ url_data_test_tsv <- "https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb
 
 url_data_4years <- "https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301912088583300&period=&begin_date=2015-10-01&end_date=2019-10-01"
 
+file_LA_contributions <- "~/Autumn-2019/COMM177b/rising-waters/LA_campaign_data_test.csv"
+
 ```
 
 
@@ -36,6 +38,7 @@ url_data_4years <- "https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_0
 #   html_table()
 ```
  
+
 ## Reading in primary (4year timespan) data
 ```{r}
 
@@ -134,6 +137,13 @@ usgs_data_test <-
   mutate(temperature = as.double(temperature))
 
 # names(usgs_data_test) <- names_usgs_data
+```
+
+
+## Read in LA contribution data
+```{r}
+LA_contributions_test <- read_csv(file_LA_contributions)
+
 ```
 
 
