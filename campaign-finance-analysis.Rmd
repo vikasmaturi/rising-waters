@@ -12,17 +12,39 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Libraies
+
 ```{r}
 #load libraries
 library(tidyverse)
 ```
 
+CHANGE THIS TO THE LOCATION OF THE SAVED .RDS FILE ON YOUR COMPUTER!
+```{r}
+#save the file name where the .Rds data is stored - 
+LA_contributions_file <- "~/Autumn-2019/COMM177b/LA-contributions.Rds"
+```
 
 
 #ONE TIME ONLY; READ IN FILES AND SAVE COMBINED DATA TO RDS
-
-```{r}
+```{r, eval = FALSE}
 #save data file names
+
+file_LA_contributions_101012_020913 <- "~/Autumn-2019/COMM177b/LA_contributions_101012_020913.csv"
+file_LA_contributions_021013_060913 <- "~/Autumn-2019/COMM177b/LA_contributions_021013_060913.csv"
+file_LA_contributions_061013_100913 <- "~/Autumn-2019/COMM177b/LA_contributions_061013_100913.csv"
+file_LA_contributions_101013_020914 <- "~/Autumn-2019/COMM177b/LA_contributions_101013_020914.csv"
+file_LA_contributions_021014_060914 <- "~/Autumn-2019/COMM177b/LA_contributions_021014_060914.csv"
+file_LA_contributions_061014_100914 <- "~/Autumn-2019/COMM177b/LA_contributions_061014_100914.csv"
+file_LA_contributions_101014_020915 <- "~/Autumn-2019/COMM177b/LA_contributions_101014_020915.csv"
+file_LA_contributions_021015_060915 <- "~/Autumn-2019/COMM177b/LA_contributions_021015_060915.csv"
+file_LA_contributions_061015_100915 <- "~/Autumn-2019/COMM177b/LA_contributions_061018_100918.csv"
+file_LA_contributions_101015_020916 <- "~/Autumn-2019/COMM177b/LA_contributions_101015_020916.csv"
+file_LA_contributions_021016_060916 <- "~/Autumn-2019/COMM177b/LA_contributions_021016_060916.csv"
+file_LA_contributions_061016_100916 <- "~/Autumn-2019/COMM177b/LA_contributions_061016_100916.csv"
+file_LA_contributions_101016_020917 <- "~/Autumn-2019/COMM177b/LA_contributions_101016_020917.csv"
+file_LA_contributions_021017_060917 <- "~/Autumn-2019/COMM177b/LA_contributions_021017_060917.csv"
+file_LA_contributions_061017_100917 <- "~/Autumn-2019/COMM177b/LA_contributions_061017_100917.csv"
+
 file_LA_contributions_101017_020918 <- "~/Autumn-2019/COMM177b/LA_contributions_101017_020918.csv"
 file_LA_contributions_021018_060918 <- "~/Autumn-2019/COMM177b/LA_contributions_021018_060918.csv"
 file_LA_contributions_061018_100918 <- "~/Autumn-2019/COMM177b/LA_contributions_061018_100918.csv"
@@ -31,10 +53,27 @@ file_LA_contributions_021019_060919 <- "~/Autumn-2019/COMM177b/LA_contributions_
 file_LA_contributions_061019_101019 <- "~/Autumn-2019/COMM177b/LA_contributions_061019-101019.csv"
 
 #save path to save file 
-file_save_combined_path <- "~/Autumn-2019/COMM177b/rising-waters/LA-contributions."
+file_save_combined_path <- "~/Autumn-2019/COMM177b/LA-contributions.Rds"
 ```
 
-```{r}
+```{r, eval = FALSE}
+
+LA_contributions_101012_020913 <- read_csv(file_LA_contributions_101012_020913)
+LA_contributions_021013_060913 <- read_csv(file_LA_contributions_021013_060913)
+LA_contributions_061013_100913 <- read_csv(file_LA_contributions_061013_100913)
+LA_contributions_101013_020914 <- read_csv(file_LA_contributions_101013_020914)
+LA_contributions_021014_060914 <- read_csv(file_LA_contributions_021014_060914)
+LA_contributions_061014_100914 <- read_csv(file_LA_contributions_061014_100914) 
+LA_contributions_101014_020915 <- read_csv(file_LA_contributions_101014_020915) 
+LA_contributions_021015_060915 <- read_csv(file_LA_contributions_021015_060915) 
+LA_contributions_061015_100915 <- read_csv(file_LA_contributions_061015_100915) 
+LA_contributions_101015_020916 <- read_csv(file_LA_contributions_101015_020916) 
+LA_contributions_021016_060916 <- read_csv(file_LA_contributions_021016_060916) 
+LA_contributions_061016_100916 <- read_csv(file_LA_contributions_061016_100916) 
+LA_contributions_101016_020917 <- read_csv(file_LA_contributions_101016_020917) 
+LA_contributions_021017_060917 <- read_csv(file_LA_contributions_021017_060917) 
+LA_contributions_061017_100917 <- read_csv(file_LA_contributions_061017_100917)
+
 #read files into tibbles (data frames)
 LA_contributions_101017_020918 <- read_csv(file_LA_contributions_101017_020918)
 LA_contributions_021018_060918 <- read_csv(file_LA_contributions_021018_060918)
@@ -44,7 +83,8 @@ LA_contributions_021019_060919 <- read_csv(file_LA_contributions_021019_060919)
 LA_contributions_061019_101019 <- read_csv(file_LA_contributions_061019_101019)
 ```
 
-```{r}
+```{r, eval = FALSE}
+
 #Join data frames into single tibble (dataframe)
 LA_contributions <-
   LA_contributions_061019_101019 %>% 
@@ -52,19 +92,82 @@ LA_contributions <-
   bind_rows(LA_contributions_101018_020919) %>% 
   bind_rows(LA_contributions_061018_100918) %>% 
   bind_rows(LA_contributions_021018_060918) %>% 
-  bind_rows(LA_contributions_101017_020918)
+  bind_rows(LA_contributions_101017_020918) %>% 
+  bind_rows(LA_contributions_061017_100917) %>% 
+  bind_rows(LA_contributions_021017_060917) %>% 
+  bind_rows(LA_contributions_101016_020917) %>% 
+  bind_rows(LA_contributions_061016_100916) %>% 
+  bind_rows(LA_contributions_021016_060916) %>% 
+  bind_rows(LA_contributions_101015_020916) %>% 
+  bind_rows(LA_contributions_061015_100915) %>% 
+  bind_rows(LA_contributions_021015_060915) %>% 
+  bind_rows(LA_contributions_101014_020915) %>% 
+  bind_rows(LA_contributions_061014_100914) %>% 
+  bind_rows(LA_contributions_021014_060914) %>% 
+  bind_rows(LA_contributions_101013_020914) %>% 
+  bind_rows(LA_contributions_061013_100913) %>% 
+  bind_rows(LA_contributions_021013_060913) %>% 
+  bind_rows(LA_contributions_101012_020913) 
+
 ```
 
-```{r}
+```{r, eval = FALSE}
+
 #Write combined data file out output .Rds file
-write_rds(LA_contributions, file_save_combined_path)
+#write_rds(LA_contributions, LA_contributions_file)
 ```
 
 
 # Read in .Rds data file will all campaign finance data
 ```{r}
-
+LA_contributions <- 
+  read_rds(LA_contributions_file) %>% 
+  mutate(ContributionAmt = str_replace(ContributionAmt, "\\$", "")) %>% 
+  mutate(ContributionAmt = as.numeric(ContributionAmt))
 ```
 
+
+```{r}
+LA_contributions %>% select(ReportType) %>% group_by(ReportType) %>% count() %>% arrange(desc(n)) 
+```
+
+Some notes:
+I can't figure out what ReportType (no idea) and ReportCode (starting with F1 is an individual and F2 is a PAC).
+
+#TEMPORARILY manually inputting suspicion vendors
+```{r}
+vendors <-
+  tribble(
+    ~contractor,
+    "LAFITTE AREA INDEPENDENT LEVEE DIST",
+    "US DEPARTMENT OF AGRICLUTURE", 
+    "US DEPARTMENT OF AGRICLUTURE",
+    "GEC INC",
+    "AECOM TECHNICAL SERVICES INC",
+    "STANTON CONSTRUCTABILITY SVCS LLC",
+    "STANTEC CONSULTING SERVICES INC",
+    ".*S.*",
+    "GHD INC",
+    "THE LOUISIANA DIVERSION COMPANY JV"
+  ) %>% 
+  mutate(counter = 1)
+```
+
+
+```{r}
+company_donations <-
+  LA_contributions %>%
+  filter(str_detect(ContributorName, "STANTEC|USDA|STANTON|AECOM|GEC INC|GHD INC|LOUISIANA DIVERSION COMPANY|LAFITTE|US DEPARTMENT OF AGRICULTURE")) %>% 
+  group_by(ContributorName) %>% 
+  summarize(total_cont = sum(ContributionAmt, na.rm = TRUE))
+```
+
+
+```{r}
+LA_contributions %>% 
+  group_by(ContributorName) %>% 
+  summarize(total_cont = sum(ContributionAmt)) %>% 
+  arrange(desc(total_cont))
+```
 
 

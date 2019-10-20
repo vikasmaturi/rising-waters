@@ -87,7 +87,7 @@ openings %>%
   labs(
     title = "Water discharged per day course of spillway openings",
     x = "Day of opening",
-    y = "TWater discharged"
+    y = "Water discharged"
   ) +
   guides(color = guide_legend(title = "Opening Year & Number"))
 ```
