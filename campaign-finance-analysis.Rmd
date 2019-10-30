@@ -22,6 +22,8 @@ CHANGE THIS TO THE LOCATION OF THE SAVED .RDS FILE ON YOUR COMPUTER!
 ```{r}
 #save the file name where the .Rds data is stored - 
 LA_contributions_file <- "~/Autumn-2019/COMM177b/LA-contributions.Rds"
+
+lobbying_file <- "~/Autumn-2019/COMM177b/lobbying_data.Rds"
 ```
 
 
@@ -117,6 +119,15 @@ LA_contributions <-
 #write_rds(LA_contributions, LA_contributions_file)
 ```
 
+```{r, eval = FALSE}
+lobbying_csv_file <- "~/Autumn-2019/COMM177b/CurrentCompanies.csv"
+
+lobbying_csv <- read_csv(lobbying_csv_file)
+
+write_rds(lobbying_csv, "~/Autumn-2019/COMM177b/lobbying_data.Rds")
+
+```
+
 
 # Read in .Rds data file will all campaign finance data
 ```{r}
@@ -124,11 +135,14 @@ LA_contributions <-
   read_rds(LA_contributions_file) %>% 
   mutate(ContributionAmt = str_replace(ContributionAmt, "\\$", "")) %>% 
   mutate(ContributionAmt = as.numeric(ContributionAmt))
+
+lobbying <- 
+  read_rds(lobbying_file)
 ```
 
-
+# Understand Report Types (to do)
 ```{r}
-LA_contributions %>% select(ReportType) %>% group_by(ReportType) %>% count() %>% arrange(desc(n)) 
+LA_contributions %>% select(ReportType) %>% group_by(ReportType) %>% count() %>% arrange(desc(n)) %>% head(10)
 ```
 
 Some notes:
@@ -144,22 +158,138 @@ vendors <-
     "US DEPARTMENT OF AGRICLUTURE",
     "GEC INC",
     "AECOM TECHNICAL SERVICES INC",
+    "AECOM",
     "STANTON CONSTRUCTABILITY SVCS LLC",
     "STANTEC CONSULTING SERVICES INC",
-    ".*S.*",
+    "GEC",
     "GHD INC",
     "THE LOUISIANA DIVERSION COMPANY JV"
-  ) %>% 
-  mutate(counter = 1)
+  )
+```
+
+#trying to develop search function for data - not successful
+```{r}
+#test set of contributions
+small_contributions <- 
+  LA_contributions %>% 
+  filter(str_detect(ContributorName, "DONALD T BOLLINGER|AECOM")) %>% 
+  head(50) 
+```
+```{r}
+# #function to check each Contributor Name against pre-defined vector 
+# to_keep <- function(text, fixed_string) {
+#   str_detect(text, fixed(fixed_string, ignore_case = TRUE))
+# }
+# 
+# conts_keep <- map(LA_contributions$ContributorName, to_keep, vendors)
+# 
+# vec <- vector()
+# 
+# for(i in conts_keep){
+#   x = i %>% some(isTRUE)
+#   vec = append(vec, x)
+#   #bind_rows(has_string, x)
+# }
+# 
+# contains_vendor <- tibble(
+#   has_vendor = vec
+# )
+# 
+# LA_contributions %>% bind_cols(contains_vendor)
+
+```
+
+```{r}
+
+
+
+
+
+test <- c("DONALD", "saa", "ASDafasdf")
+
+x <- dd[[1]]
+
+company_donations <-
+  filter(test %>% map(~ to_keep(.x, text = ContributorName)) %>% pmap_lgl(all))
+
+
+keep(dd[[1]], is.na)
+
+
+map(dd, every(.p = is.logical))
+lmap(dd) %>% lmap(is.na)
+
+
+
+
+dd %>% map("d") %>% map_df(bind_rows)
+
+y <- list(0:10, 5.5)
+y %>% every(is.numeric)
+
+every(dd[[1]], is.logical)
+
+
+
+small_contributions %>% 
+  mutate = 
+  
+
+ 
+company_donations %>% filter(str_detect(ContributorName, "STANTEC"))
+
+
+
+
+
+```
+
+```{r}
+to_keep <- function(fixed_string, text) {
+  !stringr::str_detect(text, stringr::fixed(fixed_string, ignore_case = TRUE))
+}
+to_keep("g", "g")
+
+# create a vector of string to detect and to ignore
+ignored_string <- c("squat when #Putin annexed Crimea", "environmental pol")
+
+# dummy table
+df <- tibble::tibble(
+  text = c(ignored_string, "dummy")
+)
+
+df2 <- df %>% 
+  dplyr::filter(
+    ignored_string %>%
+      # apply the filter of all the text rows for each pattern
+      # you'll get one list of logical by pattern ignored_string
+      purrr::map(~ to_keep(.x, text = text)) %>%
+      # get a logical vector of rows to keep
+      purrr::pmap_lgl(all)
+  )
 ```
 
 
+# Search contributors for contractors
 ```{r}
-company_donations <-
-  LA_contributions %>%
-  filter(str_detect(ContributorName, "STANTEC|USDA|STANTON|AECOM|GEC INC|GHD INC|LOUISIANA DIVERSION COMPANY|LAFITTE|US DEPARTMENT OF AGRICULTURE")) %>% 
+contractor_contributors <-
+  LA_contributions %>% 
+  filter(str_detect(ContributorName, "STANTEC|STANTON CONSTRUCTABILITY|AECOM|GEC INC|GHD INC|LOUISIANA DIVERSION COMPANY|LAFITTE AREA|MOTT MACDONALD|NOLA PAC|NOLA ENGINEERING|WEEKS MARINE|SOIL EROSION SERVICES|PROFESSIONAL CONSTRUCTION SERVICES|SIMON AND DELANEY RESOURCE|COASTAL DREDGING COMPANY|SOIL EROSION|GRILLOT CONSTRUCTION|SEALEVEL CONSTRUCTION|HYDROTERRA TECHNOLOGIES|WILCO MARSH BUGGIES|MITCH'S LANDSCAPING|MITCHS LANDSCAPING|LUHR BRO|BAIRD & ASSOCIATES|JUSTIN REEVES|JUSTIN J REEVES|BERTUCCI CONTRACTING|C&C TECHNOLOGIES|APOLLO ENVIRONMENTAL STRATEGIES|TETRA TECH|HDR ENGINEERING|ROYAL ENGINEERING|ECOLOGICAL RESTORATION SERVICES|GREAT LAKES DREDGE|MAGNOLIA DREDGE|EARTHBALANCE")) %>% 
+  arrange(desc(ContributorName)) %>% 
+  select(ContributorName, everything()) 
+  
+contractor_contributors
+
+```
+
+```{r}
+total_giving_contractor <-
+  contractor_contributors %>% 
   group_by(ContributorName) %>% 
-  summarize(total_cont = sum(ContributionAmt, na.rm = TRUE))
+  summarize(total_giving = sum(ContributionAmt, na.rm = TRUE)) %>% 
+  arrange(desc(total_giving))
+
+#write_csv(total_giving_contractor, "~/Autumn-2019/COMM177b/total_contractor_giving.csv")
 ```
 
 
@@ -168,6 +298,19 @@ LA_contributions %>%
   group_by(ContributorName) %>% 
   summarize(total_cont = sum(ContributionAmt)) %>% 
   arrange(desc(total_cont))
+```
+
+#Search lobbying database for contract companies
+```{r}
+contractor_lobbyists <-
+  lobbying %>% 
+  #this filter is copied directly from the campaign contribution search from above - should be continually copied for consistency.
+  filter(str_detect(Rep_Name, "STANTEC|STANTON CONSTRUCTABILITY|AECOM|GEC INC|GHD INC|LOUISIANA DIVERSION COMPANY|LAFITTE AREA|MOTT MACDONALD|NOLA PAC|NOLA ENGINEERING|WEEKS MARINE|SOIL EROSION SERVICES|PROFESSIONAL CONSTRUCTION SERVICES|SIMON AND DELANEY RESOURCE|COASTAL DREDGING COMPANY|SOIL EROSION|GRILLOT CONSTRUCTION|SEALEVEL CONSTRUCTION|HYDROTERRA TECHNOLOGIES|WILCO MARSH BUGGIES|MITCH'S LANDSCAPING|MITCHS LANDSCAPING|LUHR BRO|BAIRD & ASSOCIATES|JUSTIN REEVES|JUSTIN J REEVES|BERTUCCI CONTRACTING|C&C TECHNOLOGIES|APOLLO ENVIRONMENTAL STRATEGIES|TETRA TECH|HDR ENGINEERING|ROYAL ENGINEERING|ECOLOGICAL RESTORATION SERVICES|GREAT LAKES DREDGE|MAGNOLIA DREDGE|EARTHBALANCE")) %>% 
+  arrange(desc(Rep_Name)) %>% 
+  select(Rep_Name, everything()) 
+
+write_csv(contractor_lobbyists, "~/Autumn-2019/COMM177b/contractor_lobbying.csv")
+
 ```
 
 

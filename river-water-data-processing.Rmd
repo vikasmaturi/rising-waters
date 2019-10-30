@@ -31,6 +31,9 @@ url_east_ship_7 <- "https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_0
 
 url_biloxi_7 <- "https://nwis.waterdata.usgs.gov/ms/nwis/uv?cb_00010=on&cb_00065=on&cb_00480=on&format=rdb&site_no=302318088512600&period=&begin_date=2012-10-01&end_date=2019-10-01"
 
+url_gulfport_7 <- "https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301912088583300&period=&begin_date=2012-10-01&end_date=2019-10-01"
+
+url_st_joseph_7 <- "https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00480=on&format=rdb&site_no=301104089253400&period=&begin_date=2012-10-01&end_date=2019-10-01"
 ```
 
 
@@ -129,6 +132,7 @@ east_ship_7 <-
 ```
 
 
+
 ## Reading in Biloxi site data (7 years)
 ```{r}
 biloxi_7 <- 
@@ -166,6 +170,88 @@ biloxi_7 <-
   mutate(temperature = as.double(temperature))
 ```
 
+## Reading in St. Joseph (7 years)
+```{r}
+stjoseph <- 
+  read_tsv(
+    url_st_joseph_7, 
+    col_names = FALSE,
+    col_types =
+      cols(
+        X1 = col_character(),
+        X2 = col_double(),
+        X3 = col_datetime(format = ""),
+        X4 = col_character(),
+        X5 = col_double(),
+        X6 = col_character(),
+        X7 = col_double(),
+        X8 = col_character(),
+        X9 = col_double(),
+        X10 = col_character()
+      ),
+    comment = "#",
+    skip = 50
+  ) %>% 
+  rename(
+    "agency_cd" = X1,
+    "site_no" = X2,
+    "date_time" = X3,
+    "timezone" = X4,
+    "gage_height" = X5,
+    "gage_app_prov" = X6,
+    "temperature" = X7,
+    "temp_app_prov" = X8,
+    "salinity" = X9,
+    "sal_app_prov" = X10,
+  ) %>% 
+  mutate(temperature = as.double(temperature))
+```
+
+
+## Reading in Gufport site data (7 years)
+```{r}
+gulfport <- 
+  read_tsv(
+    url_gulfport_7, 
+    col_names = FALSE,
+    col_types =
+      cols(
+        X1 = col_character(),
+        X2 = col_double(),
+        X3 = col_datetime(format = ""),
+        X4 = col_character(),
+        X5 = col_double(),
+        X6 = col_character(),
+        X7 = col_double(),
+        X8 = col_character(),
+        X9 = col_double(),
+        X10 = col_character(),
+        X11 = col_double(),
+        X12 = col_character(),
+        X13 = col_double(),
+        X14 = col_character()
+      ),
+    comment = "#",
+    skip = 50
+  ) %>% 
+  rename(
+    "agency_cd" = X1,
+    "site_no" = X2,
+    "date_time" = X3,
+    "timezone" = X4,
+    "gage_height" = X5,
+    "gage_app_prov" = X6,
+    "temperature" = X7,
+    "temp_app_prov" = X8,
+    "salinity" = X9,
+    "sal_app_prov" = X10,
+    "turbidity" = X11,
+    "turb_app_prov" = X12,
+    "dissolvedh20" = X13,
+    "diss_app_prov" = X14
+  ) %>% 
+  mutate(temperature = as.double(temperature))
+```
 
 ## Reading in TEST data
 ```{r, include = FALSE, eval = FALSE}
@@ -222,8 +308,10 @@ usgs_data_test <-
 
 
  
-# Exploratory Analysis
 
+
+
+# Exploratory Analysis
 
 ## Additional graph filtering
 ```{r}
@@ -257,6 +345,31 @@ daily_averages_east_ship_7 <-
 #calculating the average daily salinity, temperature, turbidity - biloxi (7 years)
 daily_averages_biloxi_7 <-
   biloxi_7 %>% 
+  mutate(date = date(date_time)) %>% 
+  group_by(date) %>% 
+  summarize(
+    sal_mean = mean(salinity, na.rm = TRUE),
+    temp_mean = mean(temperature, na.rm = TRUE),
+    gage_mean = mean(gage_height, na.rm = TRUE)
+    ) %>% 
+  arrange(date)
+
+
+#calculating the average daily salinity, temperature, turbidity - gulfport (7 years)
+daily_averages_gulfport <-
+  gulfport %>% 
+  mutate(date = date(date_time)) %>% 
+  group_by(date) %>% 
+  summarize(
+    sal_mean = mean(salinity, na.rm = TRUE),
+    temp_mean = mean(temperature, na.rm = TRUE),
+    gage_mean = mean(gage_height, na.rm = TRUE)
+    ) %>% 
+  arrange(date)
+
+#calculating the average daily salinity, temperature, turbidity - st joseph (7 years)
+daily_averages_stjoseph <-
+  stjoseph %>% 
   mutate(date = date(date_time)) %>% 
   group_by(date) %>% 
   summarize(
@@ -348,6 +461,53 @@ daily_averages_biloxi_7 %>%
 
 ```
 At the Biloxi site, we see no obvious drop beyond other sites, but we do see a clear change in the frequency of salinity shifts (up and down drops) - they appear more frequent and less regular moving past 2016. 
+
+
+# Daily Average Salinity in Gulfport (7 years)
+```{r}
+daily_averages_gulfport %>% 
+  ggplot(mapping = aes(x = date, y = sal_mean)) +
+  geom_line() +
+  theme_light() +
+  theme(
+  ) +
+  #Markers of the fur main spillway openings
+  geom_vline(aes(xintercept = date("2016-01-10")), color = "blue") + 
+  geom_vline(aes(xintercept = date("2018-03-08")), color = "blue") + 
+  geom_vline(aes(xintercept = date("2019-02-27")), color = "blue") + 
+  geom_vline(aes(xintercept = date("2019-05-10")), color = "blue") +
+  #text annotations
+  labs(
+    title = "Average daily salinity over time",
+    subtitle = "Bonnet Carre spillway openings in blue",
+    x = "Date",
+    y = "Average daily salinity"
+  ) 
+## ADD SCALES TO THIS GRAPH!! b
+```
+
+# Daily Average Salinity in St. Joseph (7 years)
+```{r}
+daily_averages_stjoseph %>% 
+  ggplot(mapping = aes(x = date, y = sal_mean)) +
+  geom_line() +
+  theme_light() +
+  theme(
+  ) +
+  #Markers of the fur main spillway openings
+  geom_vline(aes(xintercept = date("2016-01-10")), color = "blue") + 
+  geom_vline(aes(xintercept = date("2018-03-08")), color = "blue") + 
+  geom_vline(aes(xintercept = date("2019-02-27")), color = "blue") + 
+  geom_vline(aes(xintercept = date("2019-05-10")), color = "blue") +
+  #text annotations
+  labs(
+    title = "Average daily salinity over time",
+    subtitle = "Bonnet Carre spillway openings in blue",
+    x = "Date",
+    y = "Average daily salinity"
+  ) 
+## ADD SCALES TO THIS GRAPH!! b
+```
 
 
 #Daily Average Salinity in East Ship Island (7 years)

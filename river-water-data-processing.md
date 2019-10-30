@@ -8,35 +8,19 @@ Vikas Maturi
 library(tidyverse)
 ```
 
-    ## ── Attaching packages ────────────────────────────────────────────────────────────────────────────────────── tidyverse 1.2.1 ──
+    ## ── Attaching packages ─────────────────────────────────────── tidyverse 1.2.1 ──
 
     ## ✔ ggplot2 3.1.1       ✔ purrr   0.3.2  
     ## ✔ tibble  2.1.1       ✔ dplyr   0.8.0.1
     ## ✔ tidyr   0.8.3       ✔ stringr 1.4.0  
     ## ✔ readr   1.3.1       ✔ forcats 0.4.0
 
-    ## ── Conflicts ───────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+    ## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
     ## ✖ dplyr::filter() masks stats::filter()
     ## ✖ dplyr::lag()    masks stats::lag()
 
 ``` r
-library(rvest)
-```
-
-    ## Loading required package: xml2
-
-    ## 
-    ## Attaching package: 'rvest'
-
-    ## The following object is masked from 'package:purrr':
-    ## 
-    ##     pluck
-
-    ## The following object is masked from 'package:readr':
-    ## 
-    ##     guess_encoding
-
-``` r
+#library(rvest)
 library(lubridate)
 ```
 
@@ -50,44 +34,42 @@ library(lubridate)
 ``` r
 #url_data <- "https://nwis.waterdata.usgs.gov/ms/nwis/uv?cb_00010=on&cb_00065=on&cb_00480=on&format=html&site_no=301429089145600&period=&begin_date=2018-11-30&end_date=2019-10-03"
 
-url_data_test_tsv <- "https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301912088583300&period=&begin_date=2018-10-01&end_date=2019-10-01"
+#url_data_test_tsv <- "https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301912088583300&period=&begin_date=2018-10-01&end_date=2019-10-01"
 
-url_data_4years <- "https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301912088583300&period=&begin_date=2015-10-01&end_date=2019-10-01"
+#url_data_4years <- "https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301912088583300&period=&begin_date=2015-10-01&end_date=2019-10-01"
+
+url_east_ship <- "https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301527088521500&period=&begin_date=2015-10-01&end_date=2019-10-01"
+
+url_east_ship_7 <- "https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301527088521500&period=&begin_date=2012-10-01&end_date=2019-10-01"
+
+url_biloxi_7 <- "https://nwis.waterdata.usgs.gov/ms/nwis/uv?cb_00010=on&cb_00065=on&cb_00480=on&format=rdb&site_no=302318088512600&period=&begin_date=2012-10-01&end_date=2019-10-01"
 ```
 
-\#Reading data from online table USGS
+# Reading in data from various sites
+
+## Reading in East Ship Island Site data (4 years)
 
 ``` r
-#Do NOT USE
-# read_html(url_data) %>% 
-#   html_node(css = "body > table.tablesorter.dataListWithSuperscript.tablesorter-jui.ui-widget.ui-widget-content.ui-corner-all.hasStickyHeaders.hasFilters > tbody") %>% 
-#   html_table()
-```
-
-## Reading in primary (4year timespan) data
-
-``` r
-## NOTE: THIS IS NOT CORRECTLY READING IN SALINITY DATA ##
-usgs_data_4 <- 
+east_ship <- 
   read_tsv(
-    url_data_4years, 
+    url_east_ship, 
     col_names = FALSE,
     col_types =
       cols(
-        agency_cd = col_character(),
-        site_no = col_double(),
-        date_time = col_datetime(format = ""),
-        timezone = col_character(),
-        gage_height = col_double(),
-        gage_app_prov = col_character(),
-        temperature = col_double(),
-        temp_app_prov = col_character(),
-        salinity = col_double(),
-        sal_app_prov = col_character(),
-        turbidity = col_double(),
-        turb_app_prov = col_character(),
-        dissolvedh20 = col_double(),
-        diss_app_prov = col_character()
+        X1 = col_character(),
+        X2 = col_double(),
+        X3 = col_datetime(format = ""),
+        X4 = col_character(),
+        X5 = col_double(),
+        X6 = col_character(),
+        X7 = col_double(),
+        X8 = col_character(),
+        X9 = col_double(),
+        X10 = col_character(),
+        X11 = col_double(),
+        X12 = col_character(),
+        X13 = col_double(),
+        X14 = col_character()
       ),
     comment = "#",
     skip = 50
@@ -101,157 +83,290 @@ usgs_data_4 <-
     "gage_app_prov" = X6,
     "temperature" = X7,
     "temp_app_prov" = X8,
-    "salinity" = X9,
-    "sal_app_prov" = X10,
-    "turbidity" = X11,
-    "turb_app_prov" = X12,
-    "dissolvedh20" = X13,
-    "diss_app_prov" = X14
+    "turbidity" = X9,
+    "turb_app_prov" = X10,
+    "dissolvedh20" = X11,
+    "diss_app_prov" = X12,
+    "salinity" = X13,
+    "sal_app_prov" = X14,
   ) %>% 
   mutate(temperature = as.double(temperature))
 ```
 
-    ## Warning: The following named parsers don't match the column names:
-    ## agency_cd, site_no, date_time, timezone, gage_height, gage_app_prov,
-    ## temperature, temp_app_prov, salinity, sal_app_prov, turbidity,
-    ## turb_app_prov, dissolvedh20, diss_app_prov
+    ## Warning: 312 parsing failures.
+    ##   row col expected actual                                                                                                                                                                                           file
+    ## 47062 X13 a double    Eqp 'https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301527088521500&period=&begin_date=2015-10-01&end_date=2019-10-01'
+    ## 47077 X13 a double    Eqp 'https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301527088521500&period=&begin_date=2015-10-01&end_date=2019-10-01'
+    ## 51168 X13 a double    Eqp 'https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301527088521500&period=&begin_date=2015-10-01&end_date=2019-10-01'
+    ## 51205 X13 a double    Eqp 'https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301527088521500&period=&begin_date=2015-10-01&end_date=2019-10-01'
+    ## 51238 X13 a double    Eqp 'https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301527088521500&period=&begin_date=2015-10-01&end_date=2019-10-01'
+    ## ..... ... ........ ...... ..............................................................................................................................................................................................
+    ## See problems(...) for more details.
 
-    ## Warning: 75039 parsing failures.
-    ##   row col           expected actual                                                                                                                                                                                           file
-    ## 61697 X7  a double              Eqp 'https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301912088583300&period=&begin_date=2015-10-01&end_date=2019-10-01'
-    ## 61699 X13 a double              Eqp 'https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301912088583300&period=&begin_date=2015-10-01&end_date=2019-10-01'
-    ## 66533 X11 a double              Eqp 'https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301912088583300&period=&begin_date=2015-10-01&end_date=2019-10-01'
-    ## 70334 X9  1/0/T/F/TRUE/FALSE    29  'https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301912088583300&period=&begin_date=2015-10-01&end_date=2019-10-01'
-    ## 70334 X10 1/0/T/F/TRUE/FALSE    P   'https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301912088583300&period=&begin_date=2015-10-01&end_date=2019-10-01'
-    ## ..... ... .................. ...... ..............................................................................................................................................................................................
+## Reading in East Ship Island site data (7 years)
+
+``` r
+east_ship_7 <- 
+  read_tsv(
+    url_east_ship_7, 
+    col_names = FALSE,
+    col_types =
+      cols(
+        X1 = col_character(),
+        X2 = col_double(),
+        X3 = col_datetime(format = ""),
+        X4 = col_character(),
+        X5 = col_double(),
+        X6 = col_character(),
+        X7 = col_double(),
+        X8 = col_character(),
+        X9 = col_double(),
+        X10 = col_character(),
+        X11 = col_double(),
+        X12 = col_character(),
+        X13 = col_double(),
+        X14 = col_character()
+      ),
+    comment = "#",
+    skip = 50
+  ) %>% 
+  rename(
+    "agency_cd" = X1,
+    "site_no" = X2,
+    "date_time" = X3,
+    "timezone" = X4,
+    "gage_height" = X5,
+    "gage_app_prov" = X6,
+    "temperature" = X7,
+    "temp_app_prov" = X8,
+    "turbidity" = X9,
+    "turb_app_prov" = X10,
+    "dissolvedh20" = X11,
+    "diss_app_prov" = X12,
+    "salinity" = X13,
+    "sal_app_prov" = X14,
+  ) %>% 
+  mutate(temperature = as.double(temperature))
+```
+
+    ## Warning: 312 parsing failures.
+    ##    row col expected actual                                                                                                                                                                                           file
+    ## 144379 X13 a double    Eqp 'https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301527088521500&period=&begin_date=2012-10-01&end_date=2019-10-01'
+    ## 144394 X13 a double    Eqp 'https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301527088521500&period=&begin_date=2012-10-01&end_date=2019-10-01'
+    ## 148485 X13 a double    Eqp 'https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301527088521500&period=&begin_date=2012-10-01&end_date=2019-10-01'
+    ## 148522 X13 a double    Eqp 'https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301527088521500&period=&begin_date=2012-10-01&end_date=2019-10-01'
+    ## 148555 X13 a double    Eqp 'https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301527088521500&period=&begin_date=2012-10-01&end_date=2019-10-01'
+    ## ...... ... ........ ...... ..............................................................................................................................................................................................
+    ## See problems(...) for more details.
+
+## Reading in Biloxi site data (7 years)
+
+``` r
+biloxi_7 <- 
+  read_tsv(
+    url_biloxi_7, 
+    col_names = FALSE,
+    col_types =
+      cols(
+        X1 = col_character(),
+        X2 = col_double(),
+        X3 = col_datetime(format = ""),
+        X4 = col_character(),
+        X5 = col_double(),
+        X6 = col_character(),
+        X7 = col_double(),
+        X8 = col_character(),
+        X9 = col_double(),
+        X10 = col_character()
+      ),
+    comment = "#",
+    skip = 50
+  ) %>% 
+  rename(
+    "agency_cd" = X1,
+    "site_no" = X2,
+    "date_time" = X3,
+    "timezone" = X4,
+    "temperature" = X5,
+    "temp_app_prov" = X6,
+    "gage_height" = X7,
+    "gage_app_prov" = X8,
+    "salinity" = X9,
+    "sal_app_prov" = X10,
+  ) %>% 
+  mutate(temperature = as.double(temperature))
+```
+
+    ## Warning: 35 parsing failures.
+    ##    row col expected actual                                                                                                                                                                  file
+    ## 148385  X9 a double    Eqp 'https://nwis.waterdata.usgs.gov/ms/nwis/uv?cb_00010=on&cb_00065=on&cb_00480=on&format=rdb&site_no=302318088512600&period=&begin_date=2012-10-01&end_date=2019-10-01'
+    ## 148386  X9 a double    Eqp 'https://nwis.waterdata.usgs.gov/ms/nwis/uv?cb_00010=on&cb_00065=on&cb_00480=on&format=rdb&site_no=302318088512600&period=&begin_date=2012-10-01&end_date=2019-10-01'
+    ## 148639  X9 a double    Eqp 'https://nwis.waterdata.usgs.gov/ms/nwis/uv?cb_00010=on&cb_00065=on&cb_00480=on&format=rdb&site_no=302318088512600&period=&begin_date=2012-10-01&end_date=2019-10-01'
+    ## 148649  X9 a double    Eqp 'https://nwis.waterdata.usgs.gov/ms/nwis/uv?cb_00010=on&cb_00065=on&cb_00480=on&format=rdb&site_no=302318088512600&period=&begin_date=2012-10-01&end_date=2019-10-01'
+    ## 148682  X9 a double    Eqp 'https://nwis.waterdata.usgs.gov/ms/nwis/uv?cb_00010=on&cb_00065=on&cb_00480=on&format=rdb&site_no=302318088512600&period=&begin_date=2012-10-01&end_date=2019-10-01'
+    ## ...... ... ........ ...... .....................................................................................................................................................................
     ## See problems(...) for more details.
 
 ## Reading in TEST data
 
-``` r
-#previous approach to storing column names
-# names_usgs_data <- 
-#   read_tsv(url_data_tsv, col_names = FALSE, n_max = 1, comment ="#") %>% 
-
-#reading in the test data set (1 year), casting column types and renaming columns.
-usgs_data_test <- 
-  read_tsv(
-    url_data_test_tsv, 
-    col_names = FALSE,
-    col_types =
-      cols(
-        agency_cd = col_character(),
-        site_no = col_double(),
-        date_time = col_datetime(format = ""),
-        timezone = col_character(),
-        gage_height = col_double(),
-        gage_app_prov = col_character(),
-        temperature = col_double(),
-        temp_app_prov = col_character(),
-        salinity = col_double(),
-        sal_app_prov = col_character(),
-        turbidity = col_double(),
-        turb_app_prov = col_character(),
-        dissolvedh20 = col_double(),
-        diss_app_prov = col_character()
-      ),
-    comment = "#",
-    skip = 50
-  ) %>% 
-  rename(
-    "agency_cd" = X1,
-    "site_no" = X2,
-    "date_time" = X3,
-    "timezone" = X4,
-    "gage_height" = X5,
-    "gage_app_prov" = X6,
-    "temperature" = X7,
-    "temp_app_prov" = X8,
-    "salinity" = X9,
-    "sal_app_prov" = X10,
-    "turbidity" = X11,
-    "turb_app_prov" = X12,
-    "dissolvedh20" = X13,
-    "diss_app_prov" = X14
-  ) %>% 
-  mutate(temperature = as.double(temperature))
-```
-
-    ## Warning: The following named parsers don't match the column names:
-    ## agency_cd, site_no, date_time, timezone, gage_height, gage_app_prov,
-    ## temperature, temp_app_prov, salinity, sal_app_prov, turbidity,
-    ## turb_app_prov, dissolvedh20, diss_app_prov
-
-    ## Warning: 212 parsing failures.
-    ##   row col expected actual                                                                                                                                                                                           file
-    ##  5497 X13 a double    *** 'https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301912088583300&period=&begin_date=2018-10-01&end_date=2019-10-01'
-    ##  5499 X9  a double    Eqp 'https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301912088583300&period=&begin_date=2018-10-01&end_date=2019-10-01'
-    ##  6752 X13 a double    Eqp 'https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301912088583300&period=&begin_date=2018-10-01&end_date=2019-10-01'
-    ## 13118 X11 a double    Eqp 'https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301912088583300&period=&begin_date=2018-10-01&end_date=2019-10-01'
-    ## 13279 X11 a double    Eqp 'https://nwis.waterdata.usgs.gov/ms/nwis/uv/?cb_00010=on&cb_00065=on&cb_00300=on&cb_00480=on&cb_63680=on&format=rdb&site_no=301912088583300&period=&begin_date=2018-10-01&end_date=2019-10-01'
-    ## ..... ... ........ ...... ..............................................................................................................................................................................................
-    ## See problems(...) for more details.
-
-    ## Warning: NAs introduced by coercion
-
-``` r
-# names(usgs_data_test) <- names_usgs_data
-```
+# Exploratory Analysis
 
 ## Additional graph filtering
 
 ``` r
-#selecting just the first measurement of each day for simplicity while graphing (as needed)
-one_day_measurements <-
-  usgs_data_4 %>% 
+#calculating the average daily salinity, temperature, turbidity - east ship island (4 years)
+daily_averages_east_ship <-
+  east_ship %>% 
   mutate(date = date(date_time)) %>% 
   group_by(date) %>% 
-  arrange(date_time) %>% 
-  slice(1) %>% 
-  ungroup()
+  summarize(
+    sal_mean = mean(salinity, na.rm = TRUE),
+    temp_mean = mean(temperature, na.rm = TRUE),
+    turb_mean = mean(turbidity, na.rm = TRUE),
+    H20_mean = mean(dissolvedh20, na.rm = TRUE)
+    ) %>% 
+  arrange(date)
+
+#calculating the average daily salinity, temperature, turbidity - east ship island (7 years)
+daily_averages_east_ship_7 <-
+  east_ship_7 %>% 
+  mutate(date = date(date_time)) %>% 
+  group_by(date) %>% 
+  summarize(
+    sal_mean = mean(salinity, na.rm = TRUE),
+    temp_mean = mean(temperature, na.rm = TRUE),
+    turb_mean = mean(turbidity, na.rm = TRUE),
+    H20_mean = mean(dissolvedh20, na.rm = TRUE)
+    ) %>% 
+  arrange(date)
+
+
+#calculating the average daily salinity, temperature, turbidity - biloxi (7 years)
+daily_averages_biloxi_7 <-
+  biloxi_7 %>% 
+  mutate(date = date(date_time)) %>% 
+  group_by(date) %>% 
+  summarize(
+    sal_mean = mean(salinity, na.rm = TRUE),
+    temp_mean = mean(temperature, na.rm = TRUE),
+    gage_mean = mean(gage_height, na.rm = TRUE)
+    ) %>% 
+  arrange(date)
 ```
 
-# Exploratory Analysis
+\#Daily Average Temperature in East Ship Island (4 years)
 
 ``` r
-##
-# previous plot with all data (too crowded) of temperature change over time. 
-usgs_data_4 %>%
-  ggplot(mapping = aes(x = date_time, y = temperature)) +
-  geom_point() +
+daily_averages_east_ship %>% 
+  ggplot(mapping = aes(x = date, y = temp_mean)) +
   geom_line() +
-  theme_light()
-```
-
-    ## Warning: Removed 10637 rows containing missing values (geom_point).
-
-![](river-water-data-processing_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
-
-``` r
-# plotting temperature with just the first measurement of each day.
-# one_day_measurements %>% 
-#   ggplot(mapping = aes(x = date_time, y = temperature)) +
-#   geom_line()
-```
-
-``` r
-#plotting the change in SALINITY over time [NOTE: NOT WORKING! SALINITY DATA NOT COMING IN PROPERLY]
-usgs_data_4 %>% 
-  ggplot(mapping = aes(x = date_time, y = salinity)) +
-  geom_line()
+  #Markers of the fur main spillway openings
+  geom_vline(aes(xintercept = date("2016-01-10")), color = "blue") + 
+  geom_vline(aes(xintercept = date("2018-03-08")), color = "blue") + 
+  geom_vline(aes(xintercept = date("2019-02-27")), color = "blue") + 
+  geom_vline(aes(xintercept = date("2019-05-10")), color = "blue")
 ```
 
 ![](river-water-data-processing_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
+\#Daily Average Turbidity in East Ship Island (4 years)
+
 ``` r
-one_day_measurements %>% 
-  ggplot(mapping = aes(x = date_time, y = gage_height)) +
-  geom_line()
+daily_averages_east_ship %>% 
+  ggplot(mapping = aes(x = date, y = turb_mean)) +
+  geom_line() +
+  #Markers of the fur main spillway openings
+  geom_vline(aes(xintercept = date("2016-01-10")), color = "blue") + 
+  geom_vline(aes(xintercept = date("2018-03-08")), color = "blue") + 
+  geom_vline(aes(xintercept = date("2019-02-27")), color = "blue") + 
+  geom_vline(aes(xintercept = date("2019-05-10")), color = "blue")
 ```
 
-    ## Warning: Removed 4 rows containing missing values (geom_path).
+    ## Warning: Removed 29 rows containing missing values (geom_path).
 
 ![](river-water-data-processing_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
-Broadly, there appears to be a fair amount of consistency in temperature
-and gage height over the past four years.
+\#Daily Average Salinity in East Ship Island (4 years)
+
+``` r
+daily_averages_east_ship %>% 
+  ggplot(mapping = aes(x = date, y = sal_mean)) +
+  geom_line() +
+  theme_light() +
+  theme(
+    panel.grid.minor = element_blank()
+  ) +
+  #Markers of the fur main spillway openings
+  geom_vline(aes(xintercept = date("2016-01-10")), color = "blue") + 
+  geom_vline(aes(xintercept = date("2018-03-08")), color = "blue") + 
+  geom_vline(aes(xintercept = date("2019-02-27")), color = "blue") + 
+  geom_vline(aes(xintercept = date("2019-05-10")), color = "blue") +
+  #text annotations
+  annotate("text", x = date("2019-03-01"), y = 7, label = "Salinity drop \ninconsistent with \nhistorical trends ", hjust = "right", ) +
+  labs(
+    title = "Average daily salinity over time",
+    subtitle = "Bonnet Carre spillway openings in blue",
+    x = "Date",
+    y = "Average daily salinity"
+  ) 
+```
+
+![](river-water-data-processing_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+``` r
+## ADD SCALES TO THIS GRAPH!! b
+```
+
+We see a significant drop in salinity levels in 2019, despite consistent
+levels in years prior (even during spillway openings).
+
+\#Daily Average Salinity in Biloxi (7 years)
+
+``` r
+daily_averages_biloxi_7 %>% 
+  ggplot(mapping = aes(x = date, y = sal_mean)) +
+  geom_line() +
+  theme_light() +
+  theme(
+  ) +
+  #Markers of the fur main spillway openings
+  geom_vline(aes(xintercept = date("2016-01-10")), color = "blue") + 
+  geom_vline(aes(xintercept = date("2018-03-08")), color = "blue") + 
+  geom_vline(aes(xintercept = date("2019-02-27")), color = "blue") + 
+  geom_vline(aes(xintercept = date("2019-05-10")), color = "blue") +
+  #text annotations
+  labs(
+    title = "Average daily salinity over time",
+    subtitle = "Bonnet Carre spillway openings in blue",
+    x = "Date",
+    y = "Average daily salinity"
+  ) 
+```
+
+![](river-water-data-processing_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
+``` r
+## ADD SCALES TO THIS GRAPH!! b
+```
+
+At the Biloxi site, we see no obvious drop beyond other sites, but we do
+see a clear change in the frequency of salinity shifts (up and down
+drops) - they appear more frequent and less regular moving past 2016.
+
+\#Daily Average Salinity in East Ship Island (7 years)
+
+``` r
+daily_averages_east_ship_7 %>% 
+  ggplot(mapping = aes(x = date, y = sal_mean)) +
+  geom_line() +
+  #Markers of the fur main spillway openings
+  geom_vline(aes(xintercept = date("2016-01-10")), color = "blue") + 
+  geom_vline(aes(xintercept = date("2018-03-08")), color = "blue") + 
+  geom_vline(aes(xintercept = date("2019-02-27")), color = "blue") + 
+  geom_vline(aes(xintercept = date("2019-05-10")), color = "blue") 
+```
+
+![](river-water-data-processing_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+Looking at more historical trends, we notice no salinity drop has been
+as significant as the 2019 drop after 2 spillway openings.
