@@ -16,6 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 #load libraries
 library(tidyverse)
+library(lubridate)
 ```
 
 CHANGE THIS TO THE LOCATION OF THE SAVED .RDS FILE ON YOUR COMPUTER!
@@ -24,6 +25,8 @@ CHANGE THIS TO THE LOCATION OF THE SAVED .RDS FILE ON YOUR COMPUTER!
 LA_contributions_file <- "~/Autumn-2019/COMM177b/LA-contributions.Rds"
 
 lobbying_file <- "~/Autumn-2019/COMM177b/lobbying_data.Rds"
+
+corrected_AECOM_file <- "~/Autumn-2019/COMM177b/AECOM_contributions_clean.csv"
 ```
 
 
@@ -129,15 +132,23 @@ write_rds(lobbying_csv, "~/Autumn-2019/COMM177b/lobbying_data.Rds")
 ```
 
 
-# Read in .Rds data file will all campaign finance data
+# Read in .Rds data file will all campaign finance data and AECOM data
 ```{r}
 LA_contributions <- 
   read_rds(LA_contributions_file) %>% 
-  mutate(ContributionAmt = str_replace(ContributionAmt, "\\$", "")) %>% 
+  mutate(ContributionAmt = str_replace(ContributionAmt, "\\$", "")) %>%
+  mutate(ContributionAmt = str_replace(ContributionAmt, ",", "")) %>% 
   mutate(ContributionAmt = as.numeric(ContributionAmt))
 
 lobbying <- 
-  read_rds(lobbying_file)
+  read_rds(lobbying_file) 
+
+AECOM <- 
+  read_csv(corrected_AECOM_file) %>% 
+  mutate(ContributionAmt = str_replace(ContributionAmt, "\\$", "")) %>% 
+  mutate(ContributionAmt = str_replace(ContributionAmt, ",", "")) %>% 
+  mutate(ContributionAmt = as.numeric(ContributionAmt)) %>% 
+  mutate(ContributionDate = mdy(ContributionDate))
 ```
 
 # Understand Report Types (to do)
@@ -149,7 +160,7 @@ Some notes:
 I can't figure out what ReportType (no idea) and ReportCode (starting with F1 is an individual and F2 is a PAC).
 
 #TEMPORARILY manually inputting suspicion vendors
-```{r}
+```{r, eval = FALSE, include = FALSE}
 vendors <-
   tribble(
     ~contractor,
@@ -168,14 +179,14 @@ vendors <-
 ```
 
 #trying to develop search function for data - not successful
-```{r}
+```{r, eval = FALSE, include = FALSE}
 #test set of contributions
 small_contributions <- 
   LA_contributions %>% 
   filter(str_detect(ContributorName, "DONALD T BOLLINGER|AECOM")) %>% 
   head(50) 
 ```
-```{r}
+```{r, eval = FALSE, include = FALSE}
 # #function to check each Contributor Name against pre-defined vector 
 # to_keep <- function(text, fixed_string) {
 #   str_detect(text, fixed(fixed_string, ignore_case = TRUE))
@@ -199,7 +210,7 @@ small_contributions <-
 
 ```
 
-```{r}
+```{r, eval = FALSE, include = FALSE}
 
 
 
@@ -244,7 +255,7 @@ company_donations %>% filter(str_detect(ContributorName, "STANTEC"))
 
 ```
 
-```{r}
+```{r, eval = FALSE, include = FALSE}
 to_keep <- function(fixed_string, text) {
   !stringr::str_detect(text, stringr::fixed(fixed_string, ignore_case = TRUE))
 }
@@ -269,19 +280,40 @@ df2 <- df %>%
   )
 ```
 
+# Data wrangling: Searching contributor database for contractors
 
-# Search contributors for contractors
+## Filter contributor database by keywords
 ```{r}
-contractor_contributors <-
+contractors_filtered <-
   LA_contributions %>% 
-  filter(str_detect(ContributorName, "STANTEC|STANTON CONSTRUCTABILITY|AECOM|GEC INC|GHD INC|LOUISIANA DIVERSION COMPANY|LAFITTE AREA|MOTT MACDONALD|NOLA PAC|NOLA ENGINEERING|WEEKS MARINE|SOIL EROSION SERVICES|PROFESSIONAL CONSTRUCTION SERVICES|SIMON AND DELANEY RESOURCE|COASTAL DREDGING COMPANY|SOIL EROSION|GRILLOT CONSTRUCTION|SEALEVEL CONSTRUCTION|HYDROTERRA TECHNOLOGIES|WILCO MARSH BUGGIES|MITCH'S LANDSCAPING|MITCHS LANDSCAPING|LUHR BRO|BAIRD & ASSOCIATES|JUSTIN REEVES|JUSTIN J REEVES|BERTUCCI CONTRACTING|C&C TECHNOLOGIES|APOLLO ENVIRONMENTAL STRATEGIES|TETRA TECH|HDR ENGINEERING|ROYAL ENGINEERING|ECOLOGICAL RESTORATION SERVICES|GREAT LAKES DREDGE|MAGNOLIA DREDGE|EARTHBALANCE")) %>% 
+  filter(str_detect(ContributorName, "STANTEC|STANTON CONSTRUCTABILITY|AECOM|GEC INC|GHD INC|LOUISIANA DIVERSION COMPANY|LAFITTE AREA|MOTT MACDONALD|NOLA PAC|NOLA ENGINEERING|WEEKS MARINE|SOIL EROSION SERVICES|PROFESSIONAL CONSTRUCTION SERVICES|SIMON AND DELANEY RESOURCE|COASTAL DREDGING COMPANY|SOIL EROSION|GRILLOT CONSTRUCTION|SEALEVEL CONSTRUCTION|HYDROTERRA TECHNOLOGIES|WILCO MARSH BUGGIES|MITCH'S LANDSCAPING|MITCHS LANDSCAPING|LUHR BRO|BAIRD & ASSOCIATES|JUSTIN REEVES|JUSTIN J REEVES|BERTUCCI CONTRACTING|C&C TECHNOLOGIES|APOLLO ENVIRONMENTAL STRATEGIES|TETRA TECH|HDR ENGINEERING|ROYAL ENGINEERING|ECOLOGICAL RESTORATION SERVICES|GREAT LAKES DREDGE|MAGNOLIA DREDGE|EARTHBALANCE|THE NATURE CONSERVANCY|CRESCENT CITY CONNECTION|MARITIME SERVICES GROUP|LCPA|GASERY AND ASSOCIATES|KEEP LOUISIANA BEAUTIFUL|EXPLUS|TRAILBLAZER RC & D|LEXLEE'S KIDS|NORTH LOUISIANA ECONOMIC|KREBS LASALLE|LOUISIANA PROPERTY ACQUISITION|COASTAL ESTUARY SERVICES|GREGORY C RIGAMER|APTIM ENVIRONMENTAL|CH2M HILL|PBS&J|ROYAL ENGINEER|COASTAL ENGINEERING CONSULTANTS|VAN NESS FELDMAN|COUHIG PARTNERS|DUCKS UNLIMITED|NATIONAL AUDUBON SOCIETY|COALITION TO RESTORE COASTAL|INSTITUTE FOR FAMILY DEVELOPME|PAN AMERICAN ENGINEERS|DAN E CIVELLO|PLAQUEMINE PARISH|LTCI CONSULTING|DMS-DISASTER PLANNING|DISASTER METRICS|DULIN, WARD & DEWALD|NEWCORP|SCI RESEARCH AND CONSULTING|TRUFUND FINANCIAL SERVICES|LOUISIANA HOUSING CORPORATION|ZEHNDER COMMUNICATIONS|EMERGENT METHOD|DISASTER SERVICES CORP|DUPLANTIS DESIGN GROUP|SHULER CONSULTING|APACHE LA MINERALS|SISUNG SECURITIES|BACKFLOW PREVENTION|EMERGENT METHOD|STEPHEN B ORTEGO|ANTHONY ROUSSELL|DALE W WYBLE|CHARLES K. MONTGOMERY|SPENCER J OWENS|IMPROVED ANALYSIS THROUGH MODELING|COASTAL CONSERVATION")) %>% 
   arrange(desc(ContributorName)) %>% 
   select(ContributorName, everything()) 
-  
-contractor_contributors
 
 ```
 
+## Correct contractor names for misspellings, giving under similar but distinct names (e.g., AECOM LLC vs. AECOM)
+```{r}
+contractor_contributors <-
+  contractors_filtered %>%
+  mutate(ContributorName = if_else(str_detect(ContributorName, "ROYAL ENGINEER"), "ROYAL ENGINEERS & CONSULTANTS", ContributorName)) %>% 
+  mutate(ContributorName = if_else(str_detect(ContributorName, "AECOM"), "AECOM", ContributorName)) %>% 
+  mutate(ContributorName = if_else(str_detect(ContributorName, "COUHIG"), "COUHIG", ContributorName)) %>% 
+  mutate(ContributorName = if_else(str_detect(ContributorName, "MOTT MACDONALD"), "MOTT MACDONALD", ContributorName)) %>% 
+  mutate(ContributorName = if_else(str_detect(ContributorName, "DUPLANTIS"), "DUPLANTIS", ContributorName)) %>%
+  mutate(ContributorName = if_else(str_detect(ContributorName, "CH2M"), "CH2M", ContributorName)) %>% 
+  mutate(ContributorName = if_else(str_detect(ContributorName, "WILCO MARSH"), "WILCO MARSH", ContributorName)) %>% 
+  mutate(ContributorName = if_else(str_detect(ContributorName, "BERTUCCI"), "BERTUCCI CONSULTING", ContributorName)) %>% 
+  mutate(ContributorName = if_else(str_detect(ContributorName, "PAN AMERICAN"), "PAN AMERICAN ENGINEERS, LLC", ContributorName)) %>% 
+  mutate(ContributorName = if_else(str_detect(ContributorName, "SEALEVEL"), "SEALEVEL CONSTRUCTION INC", ContributorName)) %>%
+  mutate(ContributorName = if_else(str_detect(ContributorName, "SOIL EROSION SERVICES"), "SOIL EROSION SERVICES, LLC", ContributorName)) %>%
+  mutate(ContributorName = if_else(str_detect(ContributorName, "EMERGENT METHOD"), "EMERGENT METHOD LLC", ContributorName)) %>%
+  mutate(ContributorName = if_else(str_detect(ContributorName, "MAGNOLIA DREDGE & DOCK"), "MAGNOLIA DREDGE & DOCK, LLC", ContributorName)) %>%
+  mutate(ContributorName = if_else(str_detect(ContributorName, "STANTEC CONSULTING SERVICES"), "STANTEC CONSULTING SERVICES, INC", ContributorName)) %>%
+  mutate(ContributorName = if_else(str_detect(ContributorName, "ZEHNDER COMMUNICATIONS"), "ZEHNDER COMMUNICATIONS, LLC", ContributorName))
+```
+
+## Total giving by each contractor
 ```{r}
 total_giving_contractor <-
   contractor_contributors %>% 
@@ -289,28 +321,246 @@ total_giving_contractor <-
   summarize(total_giving = sum(ContributionAmt, na.rm = TRUE)) %>% 
   arrange(desc(total_giving))
 
+total_giving_contractor %>% head(20) %>% knitr::kable()
+
+#Write total_giving_contractor to CSV
 #write_csv(total_giving_contractor, "~/Autumn-2019/COMM177b/total_contractor_giving.csv")
 ```
 
 
+# Data Wrangling: Lobbying
+
+## Filter lobbying data for relevant contractors
 ```{r}
-LA_contributions %>% 
-  group_by(ContributorName) %>% 
-  summarize(total_cont = sum(ContributionAmt)) %>% 
-  arrange(desc(total_cont))
+lobbyists_filtered <-
+  lobbying %>% 
+  filter(str_detect(Rep_Name, "STANTEC|STANTON CONSTRUCTABILITY|AECOM|GEC INC|GHD INC|LOUISIANA DIVERSION COMPANY|LAFITTE AREA|MOTT MACDONALD|NOLA PAC|NOLA ENGINEERING|WEEKS MARINE|SOIL EROSION SERVICES|PROFESSIONAL CONSTRUCTION SERVICES|SIMON AND DELANEY RESOURCE|COASTAL DREDGING COMPANY|SOIL EROSION|GRILLOT CONSTRUCTION|SEALEVEL CONSTRUCTION|HYDROTERRA TECHNOLOGIES|WILCO MARSH BUGGIES|MITCH'S LANDSCAPING|MITCHS LANDSCAPING|LUHR BRO|BAIRD & ASSOCIATES|JUSTIN REEVES|JUSTIN J REEVES|BERTUCCI CONTRACTING|C&C TECHNOLOGIES|APOLLO ENVIRONMENTAL STRATEGIES|TETRA TECH|HDR ENGINEERING|ROYAL ENGINEERING|ECOLOGICAL RESTORATION SERVICES|GREAT LAKES DREDGE|MAGNOLIA DREDGE|EARTHBALANCE|THE NATURE CONSERVANCY|CRESCENT CITY CONNECTION|MARITIME SERVICES GROUP|LCPA|GASERY AND ASSOCIATES|KEEP LOUISIANA BEAUTIFUL|EXPLUS|TRAILBLAZER RC & D|LEXLEE'S KIDS|NORTH LOUISIANA ECONOMIC|KREBS LASALLE|LOUISIANA PROPERTY ACQUISITION|COASTAL ESTUARY SERVICES|GREGORY C RIGAMER|APTIM ENVIRONMENTAL|CH2M HILL|PBS&J|ROYAL ENGINEER|COASTAL ENGINEERING CONSULTANTS|VAN NESS FELDMAN|COUHIG PARTNERS|DUCKS UNLIMITED|NATIONAL AUDUBON SOCIETY|COALITION TO RESTORE COASTAL|INSTITUTE FOR FAMILY DEVELOPME|PAN AMERICAN ENGINEERS|DAN E CIVELLO|PLAQUEMINE PARISH|LTCI CONSULTING|DMS-DISASTER PLANNING|DISASTER METRICS|DULIN, WARD & DEWALD|NEWCORP|SCI RESEARCH AND CONSULTING|TRUFUND FINANCIAL SERVICES|LOUISIANA HOUSING CORPORATION|ZEHNDER COMMUNICATIONS|EMERGENT METHOD|DISASTER SERVICES CORP|DUPLANTIS DESIGN GROUP|SHULER CONSULTING|APACHE LA MINERALS|SISUNG SECURITIES|BACKFLOW PREVENTION|EMERGENT METHOD|STEPHEN B ORTEGO|ANTHONY ROUSSELL|DALE W WYBLE|CHARLES K. MONTGOMERY|SPENCER J OWENS|IMPROVED ANALYSIS THROUGH MODELING|COASTAL CONSERVATION")) %>% 
+  arrange(desc(Rep_Name)) %>% 
+  select(Rep_Name, everything()) 
+
 ```
+
+## Correct contractor names in lobbying dataset for misspellings, giving under similar but distinct names (e.g., AECOM LLC vs. AECOM)
+```{r}
+contractor_lobbyists <-
+  lobbyists_filtered %>%
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "ROYAL ENGINEER"), "ROYAL ENGINEERS & CONSULTANTS", Rep_Name)) %>% 
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "AECOM"), "AECOM", Rep_Name)) %>% 
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "COUHIG"), "COUHIG", Rep_Name)) %>% 
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "MOTT MACDONALD"), "MOTT MACDONALD", Rep_Name)) %>% 
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "DUPLANTIS"), "DUPLANTIS", Rep_Name)) %>%
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "CH2M"), "CH2M", Rep_Name)) %>% 
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "WILCO MARSH"), "WILCO MARSH", Rep_Name)) %>% 
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "BERTUCCI"), "BERTUCCI CONSULTING", Rep_Name)) %>% 
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "PAN AMERICAN"), "PAN AMERICAN ENGINEERS, LLC", Rep_Name)) %>% 
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "SEALEVEL"), "SEALEVEL CONSTRUCTION INC", Rep_Name)) %>%
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "SOIL EROSION SERVICES"), "SOIL EROSION SERVICES, LLC", Rep_Name)) %>%
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "EMERGENT METHOD"), "EMERGENT METHOD LLC", Rep_Name)) %>%
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "MAGNOLIA DREDGE & DOCK"), "MAGNOLIA DREDGE & DOCK, LLC", Rep_Name)) %>%
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "STANTEC CONSULTING SERVICES"), "STANTEC CONSULTING SERVICES, INC", Rep_Name)) %>%
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "ZEHNDER COMMUNICATIONS"), "ZEHNDER COMMUNICATIONS, LLC", Rep_Name))
+```
+
+## Number of lobbyists per contractor
+```{r}
+lobbyists_per_contractor <-
+  contractor_lobbyists %>% 
+  count(Rep_Name) %>% 
+  arrange(desc(n))
+
+lobbyists_per_contractor
+```
+
+
+# Analysis: Which candidates are receiving the most money from contractors?
+
+## Which candidates are receiving the most money from ANY contractor?
+```{r}
+candidate_total_received <-
+  contractor_contributors %>% 
+  group_by(FilerLastName, FilerFirstName) %>% 
+  summarize(total_received = sum(ContributionAmt)) %>% 
+  arrange(desc(total_received))
+
+write_csv(candidate_total_received, "~/Autumn-2019/COMM177b/candidates_total_received.csv")
+
+```
+This analysis reveals two important additional companies to review: CH2M and ROYAL ENGINEERS & CONSULTANTS. These consulting groupss have given massive amounts of money to a number of candidates. Further investigation is warranted. 
+
+## Which candidates are receiving the most money from contractors giving > 10,000 since 2012? 
+```{r}
+contractors_10000plus <-
+  total_giving_contractor %>% 
+  filter(total_giving > 10000) %>% 
+  select(ContributorName) 
+
+candidate_amt_received_bigmoney_contractors <-
+  contractor_contributors %>% 
+  inner_join(contractors_10000plus, by = "ContributorName") %>% 
+  group_by(FilerLastName, FilerFirstName) %>% 
+  summarize(total_received = sum(ContributionAmt)) %>% 
+  arrange(desc(total_received))
+
+#write_csv(candidate_amt_received_bigmoney_contractors, "~/Autumn-2019/COMM177b/candidates_amt_received_bigmoney_contractors.csv")
+```
+Most of the top candidates money is coming from the largest contributors. This is somewhat logical, but indicates that it a small number of contracting companies that have outsized influence over lawmaker decisions.
+
+
+# Analysis: Which candidataes are receiving the most money from SPILLWAY developers?
+```{r}
+diversion_contractors <- 
+  tribble(~ContributorName, "AECOM", "STANTEC CONSULTING SERVICES", "KREBS LASALLE ENVIRONMENTAL, LLC")
+
+candidate_amt_received_spillway_contractors <-
+  contractor_contributors %>% 
+  inner_join(diversion_contractors, by = "ContributorName") %>% 
+  group_by(FilerLastName, FilerFirstName) %>% 
+  summarize(total_received = sum(ContributionAmt)) %>% 
+  arrange(desc(total_received))
+
+#write_csv(candidate_amt_received_spillway_contractors, "~/Autumn-2019/COMM177b/candidates_amt_received_spillway_contractors.csv")
+
+```
+
+
+# Analysis: Investigations into SPILLWAY CONTRACTORS giving extremely large amounts
+
+## AECOM giving to each candidate
+```{r}
+AECOM_candidates <-
+  AECOM  %>% 
+  arrange(FilerLastName) %>% 
+  mutate(available_cont = if_else(is.na(ContributionAmt), 0, ContributionAmt)) %>% 
+  group_by(FilerLastName, FilerFirstName) %>% 
+  summarize(total_reported = sum(available_cont)) %>% 
+  arrange(desc(total_reported))
+
+AECOM_candidates %>% head(10) %>% knitr::kable()
+write_csv(AECOM_candidates, "~/Autumn-2019/COMM177b/AECOM_candidate_reported_giving.csv")
+  
+```
+AECOM focused their giving on the Mayor of New Orleans, LaToya Cantrell (12,500), and the the governor, John Bel Edwards (15,000 between the PAC and the candidate directly). Further investigation is required into the role that these two offices play in the solicitation and selection of contractors for large environmental projects.
+
+Among the other politicians. 
+
+## AECOM total giving
+```{r}
+AECOM_total_giving <-
+  AECOM %>% 
+  summarize(total_AECOM = sum(ContributionAmt, na.rm = TRUE))
+
+AECOM_total_giving %>% knitr::kable()
+```
+
+## AECOM giving per year
+```{r}
+AECOM_yearly_giving <-
+  AECOM %>% 
+  mutate(year = year(ContributionDate)) %>% 
+  group_by(year) %>% 
+  summarize(yearly_giving = sum(ContributionAmt))
+
+AECOM_yearly_giving_plot <-
+  AECOM_yearly_giving %>% 
+  ggplot(mapping = aes(x = year, y = yearly_giving)) +
+  geom_line() + 
+  theme_bw() +
+  scale_x_discrete(limits = c(2004, 2008, 2012, 2014, 2015, 2016, 2017, 2018, 2019)) +
+  geom_vline(xintercept = 2017.5, color = "blue") +
+  annotate("text", x = 2017.6, y = 30000, label = "AECOM wins\nBarataria\ncontract", size = 2.5, hjust = 0) +
+  labs(
+    y = "Giving [$]",
+    x = "Year",
+    title = "Reported AECOM giving to LA elections per year",
+    subtitle = "Leading up to X$ Barataria contract, AECOM gave almost $40,000 to LA politicians"
+  ) 
+
+AECOM_yearly_giving_plot
+
+ggsave("AECOM_yearly_giving_plot.pdf", width = 7, height = 5, plot = AECOM_yearly_giving_plot)
+```
+
+
+## STANTEC giving to each candidate
+```{r}
+Stantec_candidates <-
+  contractor_contributors %>% 
+  filter(str_detect(ContributorName, "STANTEC")) %>% 
+  group_by(FilerLastName, FilerFirstName) %>% 
+  summarize(total_reported = sum(ContributionAmt)) %>% 
+  arrange(desc(total_reported))
+
+Stantec_candidates %>% knitr::kable()
+
+#write_csv(AECOM_candidates, "~/Autumn-2019/COMM177b/AECOM_candidate_reported_giving.csv")
+  
+```
+STANTEC appears to be giving largely to Move EBR PAC. Further investigation revealed that MovEBR is a major infrastructure tax package supported by many local engineering, construction, and consulting firms, given that it was likely to spur increased business. 
+
+## STANTEC total giving
+```{r}
+STANTEC_total_giving <-
+  contractor_contributors %>% 
+  filter(str_detect(ContributorName, "STANTEC")) %>% 
+  summarize(total_stantec = sum(ContributionAmt, na.rm = TRUE))
+```
+
+
+
+
+# Investigations into non-spillway contractors giving extremely large amounts
+```{r}
+CH2M_candidates <-
+  contractor_contributors %>% 
+  filter(str_detect(ContributorName, "CH2M")) %>% 
+  group_by(FilerLastName, FilerFirstName) %>% 
+  summarize(total_reported = sum(ContributionAmt)) %>% 
+  arrange(desc(total_reported))
+
+CH2M_candidates %>% knitr::kable()
+
+#write_csv(CH2M_candidates, "~/Autumn-2019/COMM177b/CH2M_candidates.csv")
+  
+```
+
+```{r}
+Royal_candidates <-
+  contractor_contributors %>% 
+  filter(str_detect(ContributorName, "ROYAL")) %>% 
+  group_by(FilerLastName, FilerFirstName) %>% 
+  summarize(total_reported = sum(ContributionAmt)) %>% 
+  arrange(desc(total_reported))
+
+Royal_candidates %>% knitr::kable()
+
+#write_csv(Royal_candidates, "~/Autumn-2019/COMM177b/Royal_candidates.csv")
+  
+```
+
+
+
+```{r}
+STANTEC_total_giving <-
+  contractor_contributors %>% 
+  filter(str_detect(ContributorName, "STANTEC")) %>% 
+  summarize(total_stantec = sum(ContributionAmt, na.rm = TRUE))
+```
+
+
 
 #Search lobbying database for contract companies
 ```{r}
 contractor_lobbyists <-
   lobbying %>% 
   #this filter is copied directly from the campaign contribution search from above - should be continually copied for consistency.
-  filter(str_detect(Rep_Name, "STANTEC|STANTON CONSTRUCTABILITY|AECOM|GEC INC|GHD INC|LOUISIANA DIVERSION COMPANY|LAFITTE AREA|MOTT MACDONALD|NOLA PAC|NOLA ENGINEERING|WEEKS MARINE|SOIL EROSION SERVICES|PROFESSIONAL CONSTRUCTION SERVICES|SIMON AND DELANEY RESOURCE|COASTAL DREDGING COMPANY|SOIL EROSION|GRILLOT CONSTRUCTION|SEALEVEL CONSTRUCTION|HYDROTERRA TECHNOLOGIES|WILCO MARSH BUGGIES|MITCH'S LANDSCAPING|MITCHS LANDSCAPING|LUHR BRO|BAIRD & ASSOCIATES|JUSTIN REEVES|JUSTIN J REEVES|BERTUCCI CONTRACTING|C&C TECHNOLOGIES|APOLLO ENVIRONMENTAL STRATEGIES|TETRA TECH|HDR ENGINEERING|ROYAL ENGINEERING|ECOLOGICAL RESTORATION SERVICES|GREAT LAKES DREDGE|MAGNOLIA DREDGE|EARTHBALANCE")) %>% 
+  filter(str_detect(Rep_Name, "STANTEC|STANTON CONSTRUCTABILITY|AECOM|GEC INC|GHD INC|LOUISIANA DIVERSION COMPANY|LAFITTE AREA|MOTT MACDONALD|NOLA PAC|NOLA ENGINEERING|WEEKS MARINE|SOIL EROSION SERVICES|PROFESSIONAL CONSTRUCTION SERVICES|SIMON AND DELANEY RESOURCE|COASTAL DREDGING COMPANY|SOIL EROSION|GRILLOT CONSTRUCTION|SEALEVEL CONSTRUCTION|HYDROTERRA TECHNOLOGIES|WILCO MARSH BUGGIES|MITCH'S LANDSCAPING|MITCHS LANDSCAPING|LUHR BRO|BAIRD & ASSOCIATES|JUSTIN REEVES|JUSTIN J REEVES|BERTUCCI CONTRACTING|C&C TECHNOLOGIES|APOLLO ENVIRONMENTAL STRATEGIES|TETRA TECH|HDR ENGINEERING|ROYAL ENGINEERING|ECOLOGICAL RESTORATION SERVICES|GREAT LAKES DREDGE|MAGNOLIA DREDGE|EARTHBALANCE|THE NATURE CONSERVANCY|CRESCENT CITY CONNECTION|MARITIME SERVICES GROUP|LCPA|GASERY AND ASSOCIATES|KEEP LOUISIANA BEAUTIFUL|EXPLUS|TRAILBLAZER RC & D|LEXLEE'S KIDS|NORTH LOUISIANA ECONOMIC|KREBS LASALLE ENVIRONMENTAL|LOUISIANA PROPERTY ACQUISITION|COASTAL ESTUARY SERVICES|GREGORY C RIGAMER|APTIM ENVIRONMENTAL|CH2M HILL|PBS&J|ROYAL ENGINEER|COASTAL ENGINEERING CONSULTANTS|VAN NESS FELDMAN|COUHIG PARTNERS|DUCKS UNLIMITED|NATIONAL AUDUBON SOCIETY|COALITION TO RESTORE COASTAL|INSTITUTE FOR FAMILY DEVELOPME|PAN AMERICAN ENGINEERS|DAN E CIVELLO|PLAQUEMINE PARISH|LTCI CONSULTING|DMS-DISASTER PLANNING|DISASTER METRICS|DULIN, WARD & DEWALD|NEWCORP|SCI RESEARCH AND CONSULTING|TRUFUND FINANCIAL SERVICES|LOUISIANA HOUSING CORPORATION|ZEHNDER COMMUNICATIONS|EMERGENT METHOD|DISASTER SERVICES CORP|DUPLANTIS DESIGN GROUP|SHULER CONSULTING|APACHE LA MINERALS|SISUNG SECURITIES|BACKFLOW PREVENTION|EMERGENT METHOD|STEPHEN B ORTEGO|ANTHONY ROUSSELL|DALE W WYBLE|CHARLES K. MONTGOMERY|SPENCER J OWENS|IMPROVED ANALYSIS THROUGH MODELING|COASTAL CONSERVATION|")) %>% 
   arrange(desc(Rep_Name)) %>% 
   select(Rep_Name, everything()) 
 
 write_csv(contractor_lobbyists, "~/Autumn-2019/COMM177b/contractor_lobbying.csv")
 
 ```
+
+
 
 
