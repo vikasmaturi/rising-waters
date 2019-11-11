@@ -11,12 +11,14 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Libraies
+# Libraies and Parameters
 
 ```{r}
 #load libraries
 library(tidyverse)
 library(lubridate)
+library(padr)
+library(scales)
 ```
 
 CHANGE THIS TO THE LOCATION OF THE SAVED .RDS FILE ON YOUR COMPUTER!
@@ -26,11 +28,11 @@ LA_contributions_file <- "~/Autumn-2019/COMM177b/LA-contributions.Rds"
 
 lobbying_file <- "~/Autumn-2019/COMM177b/lobbying_data.Rds"
 
-corrected_AECOM_file <- "~/Autumn-2019/COMM177b/AECOM_contributions_clean.csv"
+#corrected_AECOM_file <- "~/Autumn-2019/COMM177b/AECOM_contributions_clean.csv"
 ```
 
 
-#ONE TIME ONLY; READ IN FILES AND SAVE COMBINED DATA TO RDS
+## ONE TIME ONLY; READ IN FILES AND SAVE COMBINED DATA TO RDS
 ```{r, eval = FALSE}
 #save data file names
 
@@ -42,8 +44,9 @@ file_LA_contributions_021014_060914 <- "~/Autumn-2019/COMM177b/LA_contributions_
 file_LA_contributions_061014_100914 <- "~/Autumn-2019/COMM177b/LA_contributions_061014_100914.csv"
 file_LA_contributions_101014_020915 <- "~/Autumn-2019/COMM177b/LA_contributions_101014_020915.csv"
 file_LA_contributions_021015_060915 <- "~/Autumn-2019/COMM177b/LA_contributions_021015_060915.csv"
-file_LA_contributions_061015_100915 <- "~/Autumn-2019/COMM177b/LA_contributions_061018_100918.csv"
-file_LA_contributions_101015_020916 <- "~/Autumn-2019/COMM177b/LA_contributions_101015_020916.csv"
+file_LA_contributions_061015_100915 <- "~/Autumn-2019/COMM177b/LA_contributions_061015_100915.csv"
+file_LA_contributions_101015_010916 <- "~/Autumn-2019/COMM177b/LA_contributions_101015_010916.csv"
+file_LA_contributions_011016_020916 <- "~/Autumn-2019/COMM177b/LA_contributions_011016_020916.csv"
 file_LA_contributions_021016_060916 <- "~/Autumn-2019/COMM177b/LA_contributions_021016_060916.csv"
 file_LA_contributions_061016_100916 <- "~/Autumn-2019/COMM177b/LA_contributions_061016_100916.csv"
 file_LA_contributions_101016_020917 <- "~/Autumn-2019/COMM177b/LA_contributions_101016_020917.csv"
@@ -72,7 +75,9 @@ LA_contributions_061014_100914 <- read_csv(file_LA_contributions_061014_100914)
 LA_contributions_101014_020915 <- read_csv(file_LA_contributions_101014_020915) 
 LA_contributions_021015_060915 <- read_csv(file_LA_contributions_021015_060915) 
 LA_contributions_061015_100915 <- read_csv(file_LA_contributions_061015_100915) 
-LA_contributions_101015_020916 <- read_csv(file_LA_contributions_101015_020916) 
+LA_contributions_101015_020916 <- 
+  read_csv(file_LA_contributions_101015_010916) %>% 
+  bind_rows(read_csv(file_LA_contributions_011016_020916))
 LA_contributions_021016_060916 <- read_csv(file_LA_contributions_021016_060916) 
 LA_contributions_061016_100916 <- read_csv(file_LA_contributions_061016_100916) 
 LA_contributions_101016_020917 <- read_csv(file_LA_contributions_101016_020917) 
@@ -119,7 +124,7 @@ LA_contributions <-
 ```{r, eval = FALSE}
 
 #Write combined data file out output .Rds file
-#write_rds(LA_contributions, LA_contributions_file)
+write_rds(LA_contributions, LA_contributions_file)
 ```
 
 ```{r, eval = FALSE}
@@ -132,34 +137,675 @@ write_rds(lobbying_csv, "~/Autumn-2019/COMM177b/lobbying_data.Rds")
 ```
 
 
-# Read in .Rds data file will all campaign finance data and AECOM data
+
+# Loading data
+
+## Read in .Rds data files will all campaign finance data, lobbying data, and AECOM-specific data
 ```{r}
 LA_contributions <- 
   read_rds(LA_contributions_file) %>% 
   mutate(ContributionAmt = str_replace(ContributionAmt, "\\$", "")) %>%
   mutate(ContributionAmt = str_replace(ContributionAmt, ",", "")) %>% 
-  mutate(ContributionAmt = as.numeric(ContributionAmt))
+  mutate(ContributionAmt = as.numeric(ContributionAmt)) %>% 
+  mutate(ContributionDate = mdy(ContributionDate))
 
 lobbying <- 
   read_rds(lobbying_file) 
 
-AECOM <- 
-  read_csv(corrected_AECOM_file) %>% 
-  mutate(ContributionAmt = str_replace(ContributionAmt, "\\$", "")) %>% 
-  mutate(ContributionAmt = str_replace(ContributionAmt, ",", "")) %>% 
-  mutate(ContributionAmt = as.numeric(ContributionAmt)) %>% 
-  mutate(ContributionDate = mdy(ContributionDate))
 ```
 
-# Understand Report Types (to do)
+
+# Data wrangling: Searching contributor database for contractors
+
+## Filter contributor database by keywords
 ```{r}
-LA_contributions %>% select(ReportType) %>% group_by(ReportType) %>% count() %>% arrange(desc(n)) %>% head(10)
+contractors_filtered <-
+  LA_contributions %>% 
+  filter(str_detect(ContributorName, "STANTEC|STANTON CONSTRUCTABILITY|AECOM|GEC INC|GHD INC|LOUISIANA DIVERSION COMPANY|LAFITTE AREA|MOTT MACDONALD|NOLA PAC|NOLA ENGINEERING|WEEKS MARINE|SOIL EROSION SERVICES|PROFESSIONAL CONSTRUCTION SERVICES|SIMON AND DELANEY RESOURCE|COASTAL DREDGING COMPANY|SOIL EROSION|GRILLOT CONSTRUCTION|SEALEVEL CONSTRUCTION|HYDROTERRA TECHNOLOGIES|WILCO MARSH BUGGIES|MITCH'S LANDSCAPING|MITCHS LANDSCAPING|LUHR BRO|BAIRD & ASSOCIATES|JUSTIN REEVES|JUSTIN J REEVES|BERTUCCI CONTRACTING|C&C TECHNOLOGIES|APOLLO ENVIRONMENTAL STRATEGIES|TETRA TECH|HDR ENGINEERING|ROYAL ENGINEERING|ECOLOGICAL RESTORATION SERVICES|GREAT LAKES DREDGE|MAGNOLIA DREDGE|EARTHBALANCE|THE NATURE CONSERVANCY|CRESCENT CITY CONNECTION|MARITIME SERVICES GROUP|LCPA|GASERY AND ASSOCIATES|KEEP LOUISIANA BEAUTIFUL|EXPLUS|TRAILBLAZER RC & D|LEXLEE'S KIDS|NORTH LOUISIANA ECONOMIC|KREBS LASALLE|LOUISIANA PROPERTY ACQUISITION|COASTAL ESTUARY SERVICES|GREGORY C RIGAMER|APTIM ENVIRONMENTAL|CH2M HILL|PBS&J|ROYAL ENGINEER|COASTAL ENGINEERING CONSULTANTS|VAN NESS FELDMAN|COUHIG PARTNERS|DUCKS UNLIMITED|NATIONAL AUDUBON SOCIETY|COALITION TO RESTORE COASTAL|INSTITUTE FOR FAMILY DEVELOPME|PAN AMERICAN ENGINEERS|DAN E CIVELLO|PLAQUEMINE PARISH|LTCI CONSULTING|DMS-DISASTER PLANNING|DISASTER METRICS|DULIN, WARD & DEWALD|NEWCORP|SCI RESEARCH AND CONSULTING|TRUFUND FINANCIAL SERVICES|LOUISIANA HOUSING CORPORATION|ZEHNDER COMMUNICATIONS|EMERGENT METHOD|DISASTER SERVICES CORP|DUPLANTIS DESIGN GROUP|SHULER CONSULTING|APACHE LA MINERALS|SISUNG SECURITIES|BACKFLOW PREVENTION|EMERGENT METHOD|STEPHEN B ORTEGO|ANTHONY ROUSSELL|DALE W WYBLE|CHARLES K. MONTGOMERY|SPENCER J OWENS|IMPROVED ANALYSIS THROUGH MODELING|COASTAL CONSERVATION")) %>% 
+  arrange(desc(ContributorName)) %>% 
+  select(ContributorName, everything()) 
+
 ```
 
-Some notes:
-I can't figure out what ReportType (no idea) and ReportCode (starting with F1 is an individual and F2 is a PAC).
+## Correct contractor names for misspellings, giving under similar but distinct names (e.g., AECOM LLC vs. AECOM) and remove duplicate entries
+```{r}
+contractor_contributors <-
+  contractors_filtered %>%
+  mutate(ContributorName = if_else(str_detect(ContributorName, "ROYAL ENGINEER"), "ROYAL ENGINEERS & CONSULTANTS", ContributorName)) %>% 
+  mutate(ContributorName = if_else(str_detect(ContributorName, "AECOM"), "AECOM", ContributorName)) %>% 
+  mutate(ContributorName = if_else(str_detect(ContributorName, "COUHIG"), "COUHIG", ContributorName)) %>% 
+  mutate(ContributorName = if_else(str_detect(ContributorName, "MOTT MACDONALD"), "MOTT MACDONALD", ContributorName)) %>% 
+  mutate(ContributorName = if_else(str_detect(ContributorName, "DUPLANTIS"), "DUPLANTIS", ContributorName)) %>%
+  mutate(ContributorName = if_else(str_detect(ContributorName, "CH2M"), "CH2M", ContributorName)) %>% 
+  mutate(ContributorName = if_else(str_detect(ContributorName, "WILCO MARSH"), "WILCO MARSH", ContributorName)) %>% 
+  mutate(ContributorName = if_else(str_detect(ContributorName, "BERTUCCI"), "BERTUCCI CONSULTING", ContributorName)) %>% 
+  mutate(ContributorName = if_else(str_detect(ContributorName, "PAN AMERICAN"), "PAN AMERICAN ENGINEERS, LLC", ContributorName)) %>% 
+  mutate(ContributorName = if_else(str_detect(ContributorName, "SEALEVEL"), "SEALEVEL CONSTRUCTION INC", ContributorName)) %>%
+  mutate(ContributorName = if_else(str_detect(ContributorName, "SOIL EROSION SERVICES"), "SOIL EROSION SERVICES, LLC", ContributorName)) %>%
+  mutate(ContributorName = if_else(str_detect(ContributorName, "EMERGENT METHOD"), "EMERGENT METHOD LLC", ContributorName)) %>%
+  mutate(ContributorName = if_else(str_detect(ContributorName, "MAGNOLIA DREDGE & DOCK"), "MAGNOLIA DREDGE & DOCK, LLC", ContributorName)) %>%
+  mutate(ContributorName = if_else(str_detect(ContributorName, "STANTEC CONSULTING SERVICES"), "STANTEC CONSULTING SERVICES, INC", ContributorName)) %>%
+  mutate(ContributorName = if_else(str_detect(ContributorName, "ZEHNDER COMMUNICATIONS"), "ZEHNDER COMMUNICATIONS, LLC", ContributorName)) %>% 
+  select(ContributorName, FilerFirstName, FilerLastName, ContributionDate, ContributionAmt, ContributorCity, ContributorState) %>% 
+  #removes duplicate rows in dataframe
+  distinct()
+```
 
-#TEMPORARILY manually inputting suspicion vendors
+## Total giving by each contractor
+```{r}
+total_giving_contractor <-
+  contractor_contributors %>% 
+  group_by(ContributorName) %>% 
+  summarize(total_giving = sum(ContributionAmt, na.rm = TRUE)) %>% 
+  arrange(desc(total_giving))
+
+total_giving_contractor %>% head(10) %>% knitr::kable()
+
+#Write total_giving_contractor to CSV
+write_csv(total_giving_contractor, "~/Autumn-2019/COMM177b/total_contractor_giving.csv")
+```
+This analysis reveals two important additional companies to review: CH2M and ROYAL ENGINEERS & CONSULTANTS. These consulting groupss have given massive amounts of money to a number of candidates. Further investigation is warranted. 
+
+## Dataset just AECOM giving
+```{r}
+AECOM <-
+  contractor_contributors %>% 
+  filter(str_detect(ContributorName, "AECOM")) 
+```
+
+
+
+
+
+# Data Wrangling: Lobbying
+
+## Filter lobbying data for relevant contractors
+```{r}
+lobbyists_filtered <-
+  lobbying %>% 
+  filter(str_detect(Rep_Name, "STANTEC|STANTON CONSTRUCTABILITY|AECOM|GEC INC|GHD INC|LOUISIANA DIVERSION COMPANY|LAFITTE AREA|MOTT MACDONALD|NOLA PAC|NOLA ENGINEERING|WEEKS MARINE|SOIL EROSION SERVICES|PROFESSIONAL CONSTRUCTION SERVICES|SIMON AND DELANEY RESOURCE|COASTAL DREDGING COMPANY|SOIL EROSION|GRILLOT CONSTRUCTION|SEALEVEL CONSTRUCTION|HYDROTERRA TECHNOLOGIES|WILCO MARSH BUGGIES|MITCH'S LANDSCAPING|MITCHS LANDSCAPING|LUHR BRO|BAIRD & ASSOCIATES|JUSTIN REEVES|JUSTIN J REEVES|BERTUCCI CONTRACTING|C&C TECHNOLOGIES|APOLLO ENVIRONMENTAL STRATEGIES|TETRA TECH|HDR ENGINEERING|ROYAL ENGINEERING|ECOLOGICAL RESTORATION SERVICES|GREAT LAKES DREDGE|MAGNOLIA DREDGE|EARTHBALANCE|THE NATURE CONSERVANCY|CRESCENT CITY CONNECTION|MARITIME SERVICES GROUP|LCPA|GASERY AND ASSOCIATES|KEEP LOUISIANA BEAUTIFUL|EXPLUS|TRAILBLAZER RC & D|LEXLEE'S KIDS|NORTH LOUISIANA ECONOMIC|KREBS LASALLE|LOUISIANA PROPERTY ACQUISITION|COASTAL ESTUARY SERVICES|GREGORY C RIGAMER|APTIM ENVIRONMENTAL|CH2M HILL|PBS&J|ROYAL ENGINEER|COASTAL ENGINEERING CONSULTANTS|VAN NESS FELDMAN|COUHIG PARTNERS|DUCKS UNLIMITED|NATIONAL AUDUBON SOCIETY|COALITION TO RESTORE COASTAL|INSTITUTE FOR FAMILY DEVELOPME|PAN AMERICAN ENGINEERS|DAN E CIVELLO|PLAQUEMINE PARISH|LTCI CONSULTING|DMS-DISASTER PLANNING|DISASTER METRICS|DULIN, WARD & DEWALD|NEWCORP|SCI RESEARCH AND CONSULTING|TRUFUND FINANCIAL SERVICES|LOUISIANA HOUSING CORPORATION|ZEHNDER COMMUNICATIONS|EMERGENT METHOD|DISASTER SERVICES CORP|DUPLANTIS DESIGN GROUP|SHULER CONSULTING|APACHE LA MINERALS|SISUNG SECURITIES|BACKFLOW PREVENTION|EMERGENT METHOD|STEPHEN B ORTEGO|ANTHONY ROUSSELL|DALE W WYBLE|CHARLES K. MONTGOMERY|SPENCER J OWENS|IMPROVED ANALYSIS THROUGH MODELING|COASTAL CONSERVATION|PARSONS BRINKERHOFF|EUSTIS ENGINEER|BAKER SMITH|FTN ASSOCIATES|ALL SOUTH CONSULTING ENGINEER|GIS ENGINEER|GREENPOINT ENGINEER|IMC CONSULTING ENGINEER|MEYERS ENGINEERS|PRINCIPAL ENGINEERING|ALDEN RESEARCH LABORATORY|DOWNEY ENGINEERING CORP|ECOSERVICE PARTNERS|ROYAL HASKONING")) %>% 
+  arrange(desc(Rep_Name)) %>% 
+  select(Rep_Name, everything()) 
+
+```
+
+## Correct contractor names in lobbying dataset for misspellings, giving under similar but distinct names (e.g., AECOM LLC vs. AECOM)
+```{r}
+contractor_lobbyists <-
+  lobbyists_filtered %>%
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "ROYAL ENGINEER"), "ROYAL ENGINEERS & CONSULTANTS", Rep_Name)) %>% 
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "AECOM"), "AECOM", Rep_Name)) %>% 
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "COUHIG"), "COUHIG", Rep_Name)) %>% 
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "MOTT MACDONALD"), "MOTT MACDONALD", Rep_Name)) %>% 
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "DUPLANTIS"), "DUPLANTIS", Rep_Name)) %>%
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "CH2M"), "CH2M", Rep_Name)) %>% 
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "WILCO MARSH"), "WILCO MARSH", Rep_Name)) %>% 
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "BERTUCCI"), "BERTUCCI CONSULTING", Rep_Name)) %>% 
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "PAN AMERICAN"), "PAN AMERICAN ENGINEERS, LLC", Rep_Name)) %>% 
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "SEALEVEL"), "SEALEVEL CONSTRUCTION INC", Rep_Name)) %>%
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "SOIL EROSION SERVICES"), "SOIL EROSION SERVICES, LLC", Rep_Name)) %>%
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "EMERGENT METHOD"), "EMERGENT METHOD LLC", Rep_Name)) %>%
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "MAGNOLIA DREDGE & DOCK"), "MAGNOLIA DREDGE & DOCK, LLC", Rep_Name)) %>%
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "STANTEC CONSULTING SERVICES"), "STANTEC CONSULTING SERVICES, INC", Rep_Name)) %>%
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "ZEHNDER COMMUNICATIONS"), "ZEHNDER COMMUNICATIONS, LLC", Rep_Name)) %>% 
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "STANTEC CONSULTING SERVICES"), "STANTEC CONSULTING SERVICES, INC", Rep_Name)) %>%
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "BAKER SMITH"), "T. BAKER SMITH", Rep_Name)) %>% 
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "ALL SOUTH CONSULTING ENGINEER"), "ALL SOUTH CONSULTING ENGINEERS, INC", Rep_Name)) %>%
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "PRINCIPAL ENGINEERING"), "PRINCIPAL ENGINEERING, INC.", Rep_Name)) %>%
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "GIS ENGINEERING"), "GIS ENGINEERING, LLC", Rep_Name)) %>%
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "EUSTIS ENGINEERING"), "EUSTIS ENGINEERING, LLC", Rep_Name)) %>%
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "GREENPOINT ENGINEERING"), "GREENPOINT ENGINEERING, LLC", Rep_Name)) %>%
+  mutate(Rep_Name = if_else(str_detect(Rep_Name, "MEYERS ENGINEERS"), "MEYERS ENGINEERS, LTD", Rep_Name))
+```
+
+## Number of lobbyists per contractor
+```{r}
+lobbyists_per_contractor <-
+  contractor_lobbyists %>% 
+  count(Rep_Name) %>% 
+  arrange(desc(n))
+
+lobbyists_per_contractor %>% knitr::kable()
+```
+This analysis is less interesting; though a few groups have contractors, AECOM has more lobbyists than any other listed contractor.
+
+
+
+
+# Analysis: Which candidates are receiving the most money from contractors?
+
+## Which candidates are receiving the most money from ANY contractor?
+```{r}
+candidate_total_received <-
+  contractor_contributors %>% 
+  group_by(FilerLastName, FilerFirstName) %>% 
+  summarize(total_received = sum(ContributionAmt)) %>% 
+  arrange(desc(total_received))
+
+candidate_total_received %>% head(15) %>% knitr::kable()
+
+#write_csv(candidate_total_received, "~/Autumn-2019/COMM177b/candidates_total_received.csv")
+
+```
+This reveals a select number of candidates receiving massive amounts of money from contractors. This poses an important next question; do these candidates have real decision-making power regarading (or influence over) contract approval?
+
+## Which candidates are receiving the most money from contractors giving > 10,000 since 2012? 
+```{r}
+contractors_10000plus <-
+  total_giving_contractor %>% 
+  filter(total_giving > 10000) %>% 
+  select(ContributorName) 
+
+candidate_amt_received_bigmoney_contractors <-
+  contractor_contributors %>% 
+  inner_join(contractors_10000plus, by = "ContributorName") %>% 
+  group_by(FilerLastName, FilerFirstName) %>% 
+  summarize(total_received = sum(ContributionAmt)) %>% 
+  arrange(desc(total_received))
+
+#write_csv(candidate_amt_received_bigmoney_contractors, "~/Autumn-2019/COMM177b/candidates_amt_received_bigmoney_contractors.csv")
+```
+Most of the top candidates money is coming from the largest contributors. This is somewhat logical, but indicates that it a small number of contracting companies that have outsized influence over lawmaker decisions.
+
+## Analysis: Which candidataes are receiving the most money from SPILLWAY developers?
+```{r}
+diversion_contractors <- 
+  tribble(~ContributorName, "AECOM", "STANTEC CONSULTING SERVICES", "KREBS LASALLE ENVIRONMENTAL, LLC")
+
+candidate_amt_received_spillway_contractors <-
+  contractor_contributors %>% 
+  inner_join(diversion_contractors, by = "ContributorName") %>% 
+  group_by(FilerLastName, FilerFirstName) %>% 
+  summarize(total_received = sum(ContributionAmt)) %>% 
+  arrange(desc(total_received))
+
+candidate_amt_received_spillway_contractors %>% head(10) %>%  knitr::kable()
+
+#write_csv(candidate_amt_received_spillway_contractors, "~/Autumn-2019/COMM177b/candidates_amt_received_spillway_contractors.csv")
+
+```
+When looking specifically at spillway developers, we see their donations are across a broad swath of candidates, with a few candidates receiving a large amount of money. 
+
+Further investigation reveals that it is largely AECOM giving this money; we explore this below. 
+
+
+
+
+# Analysis: Investigations into SPILLWAY CONTRACTORS (AECOM and STANTEC) giving extremely large amounts
+
+## AECOM CORPORATE giving to each candidate
+```{r}
+AECOM_candidates <-
+  AECOM  %>% 
+  arrange(FilerLastName) %>% 
+  mutate(available_cont = if_else(is.na(ContributionAmt), 0, ContributionAmt)) %>% 
+  group_by(FilerLastName, FilerFirstName) %>% 
+  summarize(total_reported = sum(available_cont)) %>% 
+  arrange(desc(total_reported))
+
+AECOM_candidates %>% head(10) %>% knitr::kable()
+#write_csv(AECOM_candidates, "~/Autumn-2019/COMM177b/AECOM_candidate_reported_giving.csv")
+  
+```
+AECOM focused their giving on the Mayor of New Orleans, LaToya Cantrell (12,500), and the the governor, John Bel Edwards (15,000 between the PAC and the candidate directly). Further investigation is required into the role that these two offices play in the solicitation and selection of contractors for large environmental projects.
+
+## AECOM CORPORATE total giving
+```{r}
+AECOM_total_giving <-
+  AECOM %>% 
+  filter(ContributionDate > "2015-01-01") %>% 
+  summarize(total_AECOM = sum(ContributionAmt, na.rm = TRUE))
+
+AECOM_total_giving
+
+```
+
+
+## AECOM CORPORATE giving per year
+```{r}
+AECOM_yearly_giving <-
+  AECOM %>% 
+  mutate(year = year(ContributionDate)) %>% 
+  filter(ContributionDate > "2011-01-01") %>% 
+  mutate(halfyear = ceiling_date(ContributionDate, "quarter")) %>% 
+  group_by(halfyear) %>% 
+  summarize(halfyearly_giving = sum(ContributionAmt)) %>% 
+  pad() %>% 
+  mutate(halfyearly_giving = if_else(is.na(halfyearly_giving), 0, halfyearly_giving))
+
+AECOM_giving_around_contract <-
+  AECOM %>% 
+  filter(ContributionDate > "2017-02-21", ContributionDate < "2017-12-21")
+
+AECOM_giving_around_contract %>% 
+  summarize(sum = sum(ContributionAmt))
+
+
+AECOM_yearly_giving_plot <-
+  AECOM_yearly_giving %>% 
+  ggplot(mapping = aes(x = halfyear, y = halfyearly_giving)) +
+  geom_line() + 
+  theme_bw() +
+  scale_x_date(
+    date_breaks = "1 year",
+    date_labels = "%b-%y"
+    #limits = c(2004, 2008, 2012, 2014, 2015, 2016, 2017, 2018, 2019)
+  ) +
+  scale_y_continuous(
+    breaks = seq(0, 16000, 2000),
+    minor_breaks = NULL,
+    labels = scales::dollar
+  ) +
+  geom_vline(xintercept = as_date("2017-07-21"), color = "red") +
+  annotate("text", x = as_date("2017-07-05"), y = 14000, label = "AECOM wins\nBarataria\ncontract", size = 2.5, hjust = 1) +
+  labs(
+    y = "Giving [$]",
+    x = "Quarter",
+    title = "Reported quarterly AECOM contributions to Louisiana politicians",
+    caption = "Data from the LA Board of Ethics"
+  ) 
+
+AECOM_yearly_giving_plot
+
+ggsave("AECOM_yearly_giving_plot.pdf", width = 7, height = 5, plot = AECOM_yearly_giving_plot)
+```
+
+## AECOM CORPORATE monthly giving before securing the Barataria contract
+```{r}
+AECOM_monthly_giving_plot <-
+  AECOM %>%
+  mutate(date_month = floor_date(ContributionDate, unit = "month")) %>% 
+  filter(ContributionDate > "2015-01-01", ContributionDate < "2019-10-01") %>% 
+  group_by(date_month) %>% 
+  summarize(monthly_giving = sum(ContributionAmt)) %>% 
+  pad() %>%   # this line aadds the missing days
+  mutate(monthly_giving = if_else(is.na(monthly_giving), 0, monthly_giving)) %>% 
+  ggplot(mapping = aes(x = date_month, y = monthly_giving)) +
+  geom_line() + 
+  theme_bw() +
+  annotate("text", x = as_date("2017-07-05"), y = 6000, label = "AECOM wins\nBarataria\ncontract", size = 2.5, hjust = 1, vjust = 0) +    geom_vline(aes(xintercept = as_date("2017-07-21")), color = "red") +
+  scale_x_date(
+    date_breaks = "1 year",
+    date_labels = "%b-%y"
+    #limits = c(2004, 2008, 2012, 2014, 2015, 2016, 2017, 2018, 2019)
+  ) +
+  scale_y_continuous(
+    breaks = seq(0, 8000, 2000),
+    minor_breaks = NULL,
+    labels = scales::dollar
+  ) +
+  labs(
+    title = "AECOM total monthly campaign finance donations to LA government officials",
+    y = "Total monthly campaign finance donations in LA [$]",
+    x = "Month"
+  )
+
+AECOM_monthly_giving_plot
+
+ggsave("AECOM_monthly_giving_plot.pdf", width = 7, height = 5, plot = AECOM_monthly_giving_plot)
+  
+
+```
+ 
+## AECOM giving 9 months before 
+```{r}
+AECOM %>% 
+  filter(ContributionDate > "2016-10-21") %>% 
+  filter(ContributionDate < "2017-10-21") %>% 
+  summarize(sum = sum(ContributionAmt))
+
+```
+
+## AECOM FAMILY + CORPORATE giving to each candidate
+We include in  our search campaign  finance donations by both AECOM or any person closely affiliated with a leader at AECOM
+```{r}
+# We include in  our search campaign  finance donations by both AECOM or any person closely affiliated with a leader at AECOM
+AECOM_family_candidates <-
+  LA_contributions  %>%
+  filter(str_detect(ContributorName, "AECOM|MICHAEL BURKE|JOAN BURKE|ALEXANDRA BURKE|OLIVIA BURKE|THERESE BURKE|CARLA CHRISTOFFERSON|ADAM CHRISTOFFERSON|STEVE MORRISS|LARA POLONI|HEATHER RIM|GLENN ROBSON|W. TROY RUDD|JOHN VOLLMER|FREDERICK WERNER|RANDALL WOTRING")) %>% 
+  arrange(desc(ContributorName)) %>% 
+  select(ContributorName, everything()) %>% 
+  arrange(FilerLastName) %>% 
+  mutate(available_cont = if_else(is.na(ContributionAmt), 0, ContributionAmt)) %>% 
+  group_by(FilerLastName, FilerFirstName) %>% 
+  summarize(total_reported = sum(available_cont)) %>% 
+  arrange(desc(total_reported))
+
+AECOM_family_candidates %>% head(10) %>% knitr::kable()
+#write_csv(AECOM_candidates, "~/Autumn-2019/COMM177b/AECOM_candidate_reported_giving.csv")
+  
+```
+
+AECOM execs and their family members do not appear to have made campaign finance contributions in LA politics.
+
+## STANTEC giving to each candidate
+```{r}
+Stantec_candidates <-
+  contractor_contributors %>% 
+  filter(str_detect(ContributorName, "STANTEC")) %>% 
+  group_by(FilerLastName, FilerFirstName) %>% 
+  summarize(total_reported = sum(ContributionAmt)) %>% 
+  arrange(desc(total_reported))
+
+Stantec_candidates %>% knitr::kable()
+
+#write_csv(AECOM_candidates, "~/Autumn-2019/COMM177b/AECOM_candidate_reported_giving.csv")
+  
+```
+STANTEC appears to be giving largely to Move EBR PAC. Further investigation revealed that MovEBR is a major infrastructure tax package supported by many local engineering, construction, and consulting firms, given that it was likely to spur increased business. 
+
+## STANTEC total giving
+```{r}
+STANTEC_total_giving <-
+  contractor_contributors %>% 
+  filter(str_detect(ContributorName, "STANTEC")) %>% 
+  summarize(total_stantec = sum(ContributionAmt, na.rm = TRUE))
+```
+
+
+
+
+# Analysis of AECOM subcontractors
+
+## What are the giving patterns of the subcontractors hired by AECOM for the project? 
+If AECOM subcontractors are giving a lot, it may suggest that AECOM pushed them to give to further secure their potential of obtaining the contract
+```{r}
+
+subcontractor_contributions <-
+  LA_contributions  %>%
+  filter(str_detect(ContributorName, "AECOM|PARSONS BRINKERHOFF|EUSTIS ENGINEER|BAKER SMITH|FTN ASSOCIATES|ALL SOUTH CONSULTING ENGINEER|GIS ENGINEER|GREENPOINT ENGINEER|IMC CONSULTING ENGINEER|MEYERS ENGINEERS|PRINCIPAL ENGINEERING|ALDEN RESEARCH LABORATORY|DOWNEY ENGINEERING CORP|ECOSERVICE PARTNERS|ROYAL HASKONING")) %>% 
+  mutate(ContributorName = if_else(str_detect(ContributorName, "AECOM"), "AECOM", ContributorName)) %>% 
+  mutate(ContributorName = if_else(str_detect(ContributorName, "STANTEC CONSULTING SERVICES"), "STANTEC CONSULTING SERVICES, INC", ContributorName)) %>%
+  mutate(ContributorName = if_else(str_detect(ContributorName, "BAKER SMITH"), "T. BAKER SMITH", ContributorName)) %>% 
+mutate(ContributorName = if_else(str_detect(ContributorName, "ALL SOUTH CONSULTING ENGINEER"), "ALL SOUTH CONSULTING ENGINEERS, INC", ContributorName)) %>%
+  mutate(ContributorName = if_else(str_detect(ContributorName, "PRINCIPAL ENGINEERING"), "PRINCIPAL ENGINEERING, INC.", ContributorName)) %>%
+  mutate(ContributorName = if_else(str_detect(ContributorName, "GIS ENGINEERING"), "GIS ENGINEERING, LLC", ContributorName)) %>%
+  mutate(ContributorName = if_else(str_detect(ContributorName, "EUSTIS ENGINEERING"), "EUSTIS ENGINEERING, LLC", ContributorName)) %>%
+  mutate(ContributorName = if_else(str_detect(ContributorName, "GREENPOINT ENGINEERING"), "GREENPOINT ENGINEERING, LLC", ContributorName)) %>%
+  mutate(ContributorName = if_else(str_detect(ContributorName, "MEYERS ENGINEERS"), "MEYERS ENGINEERS, LTD", ContributorName)) %>%
+  arrange(desc(ContributorName)) %>% 
+  select(ContributorName, FilerFirstName, FilerLastName, ContributionDate, ContributionAmt, ContributorCity, ContributorState) %>% 
+  #removes duplicate rows in dataframe
+  distinct()
+
+```
+
+## Total giving by subcontractor since 2012
+```{r}
+total_giving_subcontractor <-
+  subcontractor_contributions %>% 
+  filter(ContributionDate > "2014-10-10") %>% 
+  filter(!str_detect(ContributorName, "AECOM")) %>% 
+  group_by(ContributorName) %>% 
+  summarize(total_giving = sum(ContributionAmt, na.rm = TRUE)) %>% 
+  arrange(desc(total_giving))
+
+total_giving_subcontractor %>% head(10) %>% knitr::kable()
+
+total_subs <- total_giving_subcontractor %>% summarize(tot = sum(total_giving))
+```
+
+## Total giving by subcontractor through approval process (since late 2016)
+```{r}
+subcontractor_giving_since_2016 <-
+  subcontractor_contributions %>% 
+  filter(!str_detect(ContributorName, "AECOM")) %>% 
+  filter(ContributionDate > "2015-12-31") %>% 
+  group_by(ContributorName) %>% 
+  summarize(total_giving = sum(ContributionAmt, na.rm = TRUE)) %>% 
+  arrange(desc(total_giving))
+
+subcontractor_giving_since_2016 %>% head(10) %>% knitr::kable()
+```
+
+## Candidates receiving the most from AECOM subcontractors
+```{r}
+candidate_total_subcontractors <-
+  subcontractor_contributions %>%
+  filter(!str_detect(ContributorName, "AECOM")) %>% 
+  group_by(FilerLastName, FilerFirstName) %>% 
+  summarize(total_received = sum(ContributionAmt)) %>% 
+  arrange(desc(total_received))
+
+candidate_total_subcontractors %>% head(15) %>% knitr::kable()
+```
+
+##  Monthly giving of AECOM subcontractors
+```{r}
+subcontractor_monthly_giving_plot <-
+  subcontractor_contributions %>%
+  mutate(date_month = floor_date(ContributionDate, unit = "month")) %>% 
+  filter(ContributionDate > "2014-01-01", ContributionDate < "2018-06-01") %>% 
+  group_by(date_month, ContributorName) %>% 
+  summarize(monthly_giving = sum(ContributionAmt)) %>% 
+  pad(group = "ContributorName") %>%   # this line aadds the missing days
+  mutate(monthly_giving = if_else(is.na(monthly_giving), 0, monthly_giving)) %>% 
+  ggplot(mapping = aes(x = date_month, y = monthly_giving)) +
+  geom_line(aes(color = ContributorName)) + 
+  theme_bw() +
+  annotate("text", x = as_date("2017-08-25"), y = 9000, label = "AECOM wins\nBarataria\ncontract", size = 2.5, hjust = 1, vjust = 0) +
+  annotate("text", x = as_date("2017-12-15"), y = 9000, label = "AECOM finalizes\nBarataria\ncontract cost", size = 2.5, hjust = 0, vjust = 0) +
+  geom_vline(aes(xintercept = as_date("2017-09-01")), color = "black") +
+  geom_vline(aes(xintercept = as_date("2017-11-25")), color = "black") +
+  scale_y_continuous(
+    breaks = seq(0, 25000, 2500),
+    minor_breaks = NULL,
+    labels = scales::dollar
+  ) +
+  theme(legend.position = "bottom") +
+  labs(
+    title = "AECOM and subcontractors total monthly campaign finance donations to LA government officials",
+    y = "Total monthly campaign finance donations in LA [$]",
+    x = "Month"
+  )
+
+subcontractor_monthly_giving_plot
+
+ggsave("subcontractor_monthly_giving_plot.pdf", width = 9, height = 5, plot = subcontractor_monthly_giving_plot)
+
+```
+
+## Total subcontractor giving over time (monthly)
+```{r}
+summed_subcontractor_monthly_giving_plot <-
+  subcontractor_contributions %>%
+  mutate(
+    date_month = floor_date(ContributionDate, unit = "month")
+  )%>% 
+  filter(ContributionDate > "2016-01-01", ContributionDate < "2018-10-01") %>% 
+  mutate(contractor_status = if_else(str_detect(ContributorName, "AECOM"), "AECOM", "All subcontractors")) %>% 
+  group_by(date_month, contractor_status) %>% 
+  summarize(monthly_giving = sum(ContributionAmt)) %>% 
+  pad(group = "contractor_status") %>%   # this line aadds the missing days
+  mutate(monthly_giving = if_else(is.na(monthly_giving), 0, monthly_giving)) %>% 
+  ggplot(mapping = aes(x = date_month, y = monthly_giving)) +
+  #geom_rect(aes(xmin = as_date("2017-07-21"), xmax = as_date("2017-10-21"), ymin = -Inf, ymax = Inf), fill = "lightblue2") +
+  geom_line(aes(color = contractor_status)) + 
+  theme_light() +
+  theme(
+    legend.position = c(0.2, 0.8),
+    legend.background = element_rect(size = 1, linetype = "dotted")
+  ) +
+  scale_y_continuous(
+    breaks = seq(0, 40000, 5000),
+    minor_breaks = NULL,
+    labels = scales::dollar
+  ) +
+  annotate("text", x = as_date("2017-07-05"), y = 17000, label = "AECOM wins\nBarataria\ncontract", size = 2.5, hjust = 1, vjust = 0) +
+  geom_vline(aes(xintercept = as_date("2017-07-21")), color = "black") +
+  labs(
+    title = "AECOM and subcontractors total monthly campaign finance donations to LA government officials",
+    y = "Total monthly campaign finance donations in LA [$]",
+    x = "Month", 
+    color = "Contractor"
+  )
+
+summed_subcontractor_monthly_giving_plot
+
+ggsave("summed_subcontractor_monthly_giving_plot.pdf", width = 9, height = 5, plot = summed_subcontractor_monthly_giving_plot)
+
+```
+
+## Total subcontractor giving over time (quarterly)
+```{r}
+subcontractor_quarterly_giving <-
+  subcontractor_contributions %>%
+  mutate(
+    quarter = ceiling_date(ContributionDate, unit = "quarter")
+  )%>% 
+  filter(ContributionDate > "2010-01-01", ContributionDate < "2019-10-01") %>% 
+  # group data into "subcontractor" vs. "AECOM"
+  mutate(contractor_status = if_else(str_detect(ContributorName, "AECOM"), "AECOM", "All subcontractors")) %>% 
+  group_by(quarter, contractor_status) %>% 
+  summarize(q_giving = sum(ContributionAmt)) %>% 
+  pad(group = "contractor_status") %>%   # this line adds 0 q_giving when there is no giving in that quarter (for each group)
+  mutate(q_giving = if_else(is.na(q_giving), 0, q_giving)) %>% 
+
+  ## plot the data
+  ggplot(mapping = aes(x = quarter, y = q_giving)) +
+  geom_rect(aes(xmin = as_date("2017-03-01"), xmax = as_date("2017-07-21"), ymin = -Inf, ymax = Inf), fill = "lightblue2") +
+  geom_line(aes(color = contractor_status)) + 
+  theme_light() +
+  theme(
+    legend.position = c(0.2, 0.8),
+    legend.background = element_rect(size = 1, linetype = "dotted")
+  ) +
+  scale_y_continuous(
+    breaks = seq(0, 60000, 5000),
+    minor_breaks = NULL,
+    labels = scales::dollar
+  ) +
+  annotate("text", x = as_date("2017-02-20"), y = 50000, label = "Contract search\nprocess\nbegins", size = 2.5, hjust = 1, vjust = 0)  +
+  annotate("text", x = as_date("2017-07-31"), y = 50000, label = "AECOM wins\nBarataria\ncontract", size = 2.5, hjust = 0, vjust = 0) +
+  geom_vline(aes(xintercept = as_date("2017-07-21")), color = "black") +
+  geom_vline(aes(xintercept = as_date("2017-03-01")), color = "black") +
+  labs(
+    title = "AECOM and subcontractors total monthly campaign finance donations to LA government officials",
+    y = "Total monthly campaign finance donations in LA [$]",
+    x = "Month", 
+    color = "Contractor"
+  )
+
+# view plot
+subcontractor_quarterly_giving
+
+ggsave("subcontractor_quarterly_giving.pdf", width = 9, height = 5, plot = subcontractor_quarterly_giving)
+
+  
+```
+
+
+
+
+# Investigations into the other companies bidding for the Barataria diversion contract
+
+## Which competitors are also giving campaign finance donations, and how much?
+```{r}
+barataria_candidate_contributions <-
+  LA_contributions  %>%
+  filter(str_detect(ContributorName, "AECOM|STANTEC|HTNB|COWI RIVER|ARCADIS")) %>% 
+  mutate(ContributorName = if_else(str_detect(ContributorName, "AECOM"), "AECOM", ContributorName)) %>% 
+  mutate(ContributorName = if_else(str_detect(ContributorName, "STANTEC CONSULTING SERVICES"), "STANTEC CONSULTING SERVICES, INC", ContributorName)) %>% 
+  arrange(desc(ContributorName))
+
+total_barataria_candidate_contributions <-
+  barataria_candidate_contributions %>% 
+  group_by(ContributorName) %>% 
+  summarize(total_giving = sum(ContributionAmt, na.rm = TRUE)) %>% 
+  arrange(desc(total_giving))
+          
+total_barataria_candidate_contributions %>% head(5) %>% knitr::kable()
+
+
+```
+Of the other candidates, ARCADIS was the only other that invested a substantial amount of money. 
+Let's see how Arcadis giving changed over time, in comparison to AECOMs. 
+
+## Arcadis vs. AECOM campaign finance donations over time
+```{r}
+arcadis_aecom_monthly_giving_plot <-
+  barataria_candidate_contributions %>%
+  filter(ContributorName != "STANTEC CONSULTING SERVICES, INC") %>% 
+  mutate(date_month = floor_date(ContributionDate, unit = "month")) %>% 
+  filter(ContributionDate > "2015-01-01", ContributionDate < "2018-06-01") %>% 
+  group_by(date_month, ContributorName) %>% 
+  summarize(monthly_giving = sum(ContributionAmt)) %>% 
+  pad(group = "ContributorName") %>%   # this line aadds the missing days
+  mutate(monthly_giving = if_else(is.na(monthly_giving), 0, monthly_giving)) %>% 
+  ggplot(mapping = aes(x = date_month, y = monthly_giving)) +
+  geom_line(aes(color = ContributorName)) + 
+  theme_bw() +
+  annotate("text", x = as_date("2017-08-25"), y = 9000, label = "AECOM wins\nBarataria\ncontract", size = 2.5, hjust = 1, vjust = 0) +
+  annotate("text", x = as_date("2017-12-15"), y = 9000, label = "AECOM finalizes\nBarataria\ncontract cost", size = 2.5, hjust = 0, vjust = 0) +
+  geom_vline(aes(xintercept = as_date("2017-09-01")), color = "black") +
+  geom_vline(aes(xintercept = as_date("2017-12-05")), color = "black") +
+  scale_y_continuous(
+    breaks = seq(0, 12000, 2000),
+    minor_breaks = NULL,
+    labels = scales::dollar
+  ) +
+  labs(
+    title = "AECOM and Arcadis total monthly campaign finance donations to LA government officials",
+    y = "Total monthly campaign finance donations in LA [$]",
+    x = "Month"
+  )
+
+arcadis_aecom_monthly_giving_plot
+
+ggsave("arcadis_aecom_monthly_giving_plot.pdf", width = 9, height = 5, plot = arcadis_aecom_monthly_giving_plot)
+```
+We see that Arcadis gives less than AECOM in the lead up to the Barataria contract. 
+
+
+
+
+# Investigations into non-spillway contractors giving extremely large amounts
+
+## CH2M giving
+```{r}
+CH2M_candidates <-
+  contractor_contributors %>% 
+  filter(str_detect(ContributorName, "CH2M")) %>% 
+  group_by(FilerLastName, FilerFirstName) %>% 
+  summarize(total_reported = sum(ContributionAmt)) %>% 
+  arrange(desc(total_reported))
+
+CH2M_candidates %>% knitr::kable()
+
+#write_csv(CH2M_candidates, "~/Autumn-2019/COMM177b/CH2M_candidates.csv")
+  
+```
+
+## Royal Engineering Giving
+```{r}
+Royal_candidates <-
+  contractor_contributors %>% 
+  filter(str_detect(ContributorName, "ROYAL")) %>% 
+  group_by(FilerLastName, FilerFirstName) %>% 
+  summarize(total_reported = sum(ContributionAmt)) %>% 
+  arrange(desc(total_reported))
+
+Royal_candidates %>% knitr::kable()
+
+#write_csv(Royal_candidates, "~/Autumn-2019/COMM177b/Royal_candidates.csv")
+  
+```
+
+
+
+
+# OLD STUFF - DONT USE
+
+## OLD STUFF - DONT USE Understand Report Types (to do)
+```{r, include = FALSE, eval = FALSE}
+#LA_contributions %>% select(ReportType) %>% group_by(ReportType) %>% count() %>% arrange(desc(n)) %>% head(10)
+
+# Some notes:
+# I can't figure out what ReportType (no idea) and ReportCode (starting with F1 is an individual and F2 is a PAC).
+
+```
+
+## OLD STUFF - DONT USE TEMPORARILY manually inputting suspicion vendors
 ```{r, eval = FALSE, include = FALSE}
 vendors <-
   tribble(
@@ -178,7 +824,7 @@ vendors <-
   )
 ```
 
-#trying to develop search function for data - not successful
+## OLD STUFF - DONT USE trying to develop search function for data - not successful
 ```{r, eval = FALSE, include = FALSE}
 #test set of contributions
 small_contributions <- 
@@ -209,7 +855,6 @@ small_contributions <-
 # LA_contributions %>% bind_cols(contains_vendor)
 
 ```
-
 ```{r, eval = FALSE, include = FALSE}
 
 
@@ -254,7 +899,6 @@ company_donations %>% filter(str_detect(ContributorName, "STANTEC"))
 
 
 ```
-
 ```{r, eval = FALSE, include = FALSE}
 to_keep <- function(fixed_string, text) {
   !stringr::str_detect(text, stringr::fixed(fixed_string, ignore_case = TRUE))
@@ -279,288 +923,3 @@ df2 <- df %>%
       purrr::pmap_lgl(all)
   )
 ```
-
-# Data wrangling: Searching contributor database for contractors
-
-## Filter contributor database by keywords
-```{r}
-contractors_filtered <-
-  LA_contributions %>% 
-  filter(str_detect(ContributorName, "STANTEC|STANTON CONSTRUCTABILITY|AECOM|GEC INC|GHD INC|LOUISIANA DIVERSION COMPANY|LAFITTE AREA|MOTT MACDONALD|NOLA PAC|NOLA ENGINEERING|WEEKS MARINE|SOIL EROSION SERVICES|PROFESSIONAL CONSTRUCTION SERVICES|SIMON AND DELANEY RESOURCE|COASTAL DREDGING COMPANY|SOIL EROSION|GRILLOT CONSTRUCTION|SEALEVEL CONSTRUCTION|HYDROTERRA TECHNOLOGIES|WILCO MARSH BUGGIES|MITCH'S LANDSCAPING|MITCHS LANDSCAPING|LUHR BRO|BAIRD & ASSOCIATES|JUSTIN REEVES|JUSTIN J REEVES|BERTUCCI CONTRACTING|C&C TECHNOLOGIES|APOLLO ENVIRONMENTAL STRATEGIES|TETRA TECH|HDR ENGINEERING|ROYAL ENGINEERING|ECOLOGICAL RESTORATION SERVICES|GREAT LAKES DREDGE|MAGNOLIA DREDGE|EARTHBALANCE|THE NATURE CONSERVANCY|CRESCENT CITY CONNECTION|MARITIME SERVICES GROUP|LCPA|GASERY AND ASSOCIATES|KEEP LOUISIANA BEAUTIFUL|EXPLUS|TRAILBLAZER RC & D|LEXLEE'S KIDS|NORTH LOUISIANA ECONOMIC|KREBS LASALLE|LOUISIANA PROPERTY ACQUISITION|COASTAL ESTUARY SERVICES|GREGORY C RIGAMER|APTIM ENVIRONMENTAL|CH2M HILL|PBS&J|ROYAL ENGINEER|COASTAL ENGINEERING CONSULTANTS|VAN NESS FELDMAN|COUHIG PARTNERS|DUCKS UNLIMITED|NATIONAL AUDUBON SOCIETY|COALITION TO RESTORE COASTAL|INSTITUTE FOR FAMILY DEVELOPME|PAN AMERICAN ENGINEERS|DAN E CIVELLO|PLAQUEMINE PARISH|LTCI CONSULTING|DMS-DISASTER PLANNING|DISASTER METRICS|DULIN, WARD & DEWALD|NEWCORP|SCI RESEARCH AND CONSULTING|TRUFUND FINANCIAL SERVICES|LOUISIANA HOUSING CORPORATION|ZEHNDER COMMUNICATIONS|EMERGENT METHOD|DISASTER SERVICES CORP|DUPLANTIS DESIGN GROUP|SHULER CONSULTING|APACHE LA MINERALS|SISUNG SECURITIES|BACKFLOW PREVENTION|EMERGENT METHOD|STEPHEN B ORTEGO|ANTHONY ROUSSELL|DALE W WYBLE|CHARLES K. MONTGOMERY|SPENCER J OWENS|IMPROVED ANALYSIS THROUGH MODELING|COASTAL CONSERVATION")) %>% 
-  arrange(desc(ContributorName)) %>% 
-  select(ContributorName, everything()) 
-
-```
-
-## Correct contractor names for misspellings, giving under similar but distinct names (e.g., AECOM LLC vs. AECOM)
-```{r}
-contractor_contributors <-
-  contractors_filtered %>%
-  mutate(ContributorName = if_else(str_detect(ContributorName, "ROYAL ENGINEER"), "ROYAL ENGINEERS & CONSULTANTS", ContributorName)) %>% 
-  mutate(ContributorName = if_else(str_detect(ContributorName, "AECOM"), "AECOM", ContributorName)) %>% 
-  mutate(ContributorName = if_else(str_detect(ContributorName, "COUHIG"), "COUHIG", ContributorName)) %>% 
-  mutate(ContributorName = if_else(str_detect(ContributorName, "MOTT MACDONALD"), "MOTT MACDONALD", ContributorName)) %>% 
-  mutate(ContributorName = if_else(str_detect(ContributorName, "DUPLANTIS"), "DUPLANTIS", ContributorName)) %>%
-  mutate(ContributorName = if_else(str_detect(ContributorName, "CH2M"), "CH2M", ContributorName)) %>% 
-  mutate(ContributorName = if_else(str_detect(ContributorName, "WILCO MARSH"), "WILCO MARSH", ContributorName)) %>% 
-  mutate(ContributorName = if_else(str_detect(ContributorName, "BERTUCCI"), "BERTUCCI CONSULTING", ContributorName)) %>% 
-  mutate(ContributorName = if_else(str_detect(ContributorName, "PAN AMERICAN"), "PAN AMERICAN ENGINEERS, LLC", ContributorName)) %>% 
-  mutate(ContributorName = if_else(str_detect(ContributorName, "SEALEVEL"), "SEALEVEL CONSTRUCTION INC", ContributorName)) %>%
-  mutate(ContributorName = if_else(str_detect(ContributorName, "SOIL EROSION SERVICES"), "SOIL EROSION SERVICES, LLC", ContributorName)) %>%
-  mutate(ContributorName = if_else(str_detect(ContributorName, "EMERGENT METHOD"), "EMERGENT METHOD LLC", ContributorName)) %>%
-  mutate(ContributorName = if_else(str_detect(ContributorName, "MAGNOLIA DREDGE & DOCK"), "MAGNOLIA DREDGE & DOCK, LLC", ContributorName)) %>%
-  mutate(ContributorName = if_else(str_detect(ContributorName, "STANTEC CONSULTING SERVICES"), "STANTEC CONSULTING SERVICES, INC", ContributorName)) %>%
-  mutate(ContributorName = if_else(str_detect(ContributorName, "ZEHNDER COMMUNICATIONS"), "ZEHNDER COMMUNICATIONS, LLC", ContributorName))
-```
-
-## Total giving by each contractor
-```{r}
-total_giving_contractor <-
-  contractor_contributors %>% 
-  group_by(ContributorName) %>% 
-  summarize(total_giving = sum(ContributionAmt, na.rm = TRUE)) %>% 
-  arrange(desc(total_giving))
-
-total_giving_contractor %>% head(20) %>% knitr::kable()
-
-#Write total_giving_contractor to CSV
-#write_csv(total_giving_contractor, "~/Autumn-2019/COMM177b/total_contractor_giving.csv")
-```
-
-
-# Data Wrangling: Lobbying
-
-## Filter lobbying data for relevant contractors
-```{r}
-lobbyists_filtered <-
-  lobbying %>% 
-  filter(str_detect(Rep_Name, "STANTEC|STANTON CONSTRUCTABILITY|AECOM|GEC INC|GHD INC|LOUISIANA DIVERSION COMPANY|LAFITTE AREA|MOTT MACDONALD|NOLA PAC|NOLA ENGINEERING|WEEKS MARINE|SOIL EROSION SERVICES|PROFESSIONAL CONSTRUCTION SERVICES|SIMON AND DELANEY RESOURCE|COASTAL DREDGING COMPANY|SOIL EROSION|GRILLOT CONSTRUCTION|SEALEVEL CONSTRUCTION|HYDROTERRA TECHNOLOGIES|WILCO MARSH BUGGIES|MITCH'S LANDSCAPING|MITCHS LANDSCAPING|LUHR BRO|BAIRD & ASSOCIATES|JUSTIN REEVES|JUSTIN J REEVES|BERTUCCI CONTRACTING|C&C TECHNOLOGIES|APOLLO ENVIRONMENTAL STRATEGIES|TETRA TECH|HDR ENGINEERING|ROYAL ENGINEERING|ECOLOGICAL RESTORATION SERVICES|GREAT LAKES DREDGE|MAGNOLIA DREDGE|EARTHBALANCE|THE NATURE CONSERVANCY|CRESCENT CITY CONNECTION|MARITIME SERVICES GROUP|LCPA|GASERY AND ASSOCIATES|KEEP LOUISIANA BEAUTIFUL|EXPLUS|TRAILBLAZER RC & D|LEXLEE'S KIDS|NORTH LOUISIANA ECONOMIC|KREBS LASALLE|LOUISIANA PROPERTY ACQUISITION|COASTAL ESTUARY SERVICES|GREGORY C RIGAMER|APTIM ENVIRONMENTAL|CH2M HILL|PBS&J|ROYAL ENGINEER|COASTAL ENGINEERING CONSULTANTS|VAN NESS FELDMAN|COUHIG PARTNERS|DUCKS UNLIMITED|NATIONAL AUDUBON SOCIETY|COALITION TO RESTORE COASTAL|INSTITUTE FOR FAMILY DEVELOPME|PAN AMERICAN ENGINEERS|DAN E CIVELLO|PLAQUEMINE PARISH|LTCI CONSULTING|DMS-DISASTER PLANNING|DISASTER METRICS|DULIN, WARD & DEWALD|NEWCORP|SCI RESEARCH AND CONSULTING|TRUFUND FINANCIAL SERVICES|LOUISIANA HOUSING CORPORATION|ZEHNDER COMMUNICATIONS|EMERGENT METHOD|DISASTER SERVICES CORP|DUPLANTIS DESIGN GROUP|SHULER CONSULTING|APACHE LA MINERALS|SISUNG SECURITIES|BACKFLOW PREVENTION|EMERGENT METHOD|STEPHEN B ORTEGO|ANTHONY ROUSSELL|DALE W WYBLE|CHARLES K. MONTGOMERY|SPENCER J OWENS|IMPROVED ANALYSIS THROUGH MODELING|COASTAL CONSERVATION")) %>% 
-  arrange(desc(Rep_Name)) %>% 
-  select(Rep_Name, everything()) 
-
-```
-
-## Correct contractor names in lobbying dataset for misspellings, giving under similar but distinct names (e.g., AECOM LLC vs. AECOM)
-```{r}
-contractor_lobbyists <-
-  lobbyists_filtered %>%
-  mutate(Rep_Name = if_else(str_detect(Rep_Name, "ROYAL ENGINEER"), "ROYAL ENGINEERS & CONSULTANTS", Rep_Name)) %>% 
-  mutate(Rep_Name = if_else(str_detect(Rep_Name, "AECOM"), "AECOM", Rep_Name)) %>% 
-  mutate(Rep_Name = if_else(str_detect(Rep_Name, "COUHIG"), "COUHIG", Rep_Name)) %>% 
-  mutate(Rep_Name = if_else(str_detect(Rep_Name, "MOTT MACDONALD"), "MOTT MACDONALD", Rep_Name)) %>% 
-  mutate(Rep_Name = if_else(str_detect(Rep_Name, "DUPLANTIS"), "DUPLANTIS", Rep_Name)) %>%
-  mutate(Rep_Name = if_else(str_detect(Rep_Name, "CH2M"), "CH2M", Rep_Name)) %>% 
-  mutate(Rep_Name = if_else(str_detect(Rep_Name, "WILCO MARSH"), "WILCO MARSH", Rep_Name)) %>% 
-  mutate(Rep_Name = if_else(str_detect(Rep_Name, "BERTUCCI"), "BERTUCCI CONSULTING", Rep_Name)) %>% 
-  mutate(Rep_Name = if_else(str_detect(Rep_Name, "PAN AMERICAN"), "PAN AMERICAN ENGINEERS, LLC", Rep_Name)) %>% 
-  mutate(Rep_Name = if_else(str_detect(Rep_Name, "SEALEVEL"), "SEALEVEL CONSTRUCTION INC", Rep_Name)) %>%
-  mutate(Rep_Name = if_else(str_detect(Rep_Name, "SOIL EROSION SERVICES"), "SOIL EROSION SERVICES, LLC", Rep_Name)) %>%
-  mutate(Rep_Name = if_else(str_detect(Rep_Name, "EMERGENT METHOD"), "EMERGENT METHOD LLC", Rep_Name)) %>%
-  mutate(Rep_Name = if_else(str_detect(Rep_Name, "MAGNOLIA DREDGE & DOCK"), "MAGNOLIA DREDGE & DOCK, LLC", Rep_Name)) %>%
-  mutate(Rep_Name = if_else(str_detect(Rep_Name, "STANTEC CONSULTING SERVICES"), "STANTEC CONSULTING SERVICES, INC", Rep_Name)) %>%
-  mutate(Rep_Name = if_else(str_detect(Rep_Name, "ZEHNDER COMMUNICATIONS"), "ZEHNDER COMMUNICATIONS, LLC", Rep_Name))
-```
-
-## Number of lobbyists per contractor
-```{r}
-lobbyists_per_contractor <-
-  contractor_lobbyists %>% 
-  count(Rep_Name) %>% 
-  arrange(desc(n))
-
-lobbyists_per_contractor
-```
-This analysis is less interesting; though a few groups have contractors, none as extensive as AECOM.
-
-# Analysis: Which candidates are receiving the most money from contractors?
-
-## Which candidates are receiving the most money from ANY contractor?
-```{r}
-candidate_total_received <-
-  contractor_contributors %>% 
-  group_by(FilerLastName, FilerFirstName) %>% 
-  summarize(total_received = sum(ContributionAmt)) %>% 
-  arrange(desc(total_received))
-
-write_csv(candidate_total_received, "~/Autumn-2019/COMM177b/candidates_total_received.csv")
-
-```
-This analysis reveals two important additional companies to review: CH2M and ROYAL ENGINEERS & CONSULTANTS. These consulting groupss have given massive amounts of money to a number of candidates. Further investigation is warranted. 
-
-## Which candidates are receiving the most money from contractors giving > 10,000 since 2012? 
-```{r}
-contractors_10000plus <-
-  total_giving_contractor %>% 
-  filter(total_giving > 10000) %>% 
-  select(ContributorName) 
-
-candidate_amt_received_bigmoney_contractors <-
-  contractor_contributors %>% 
-  inner_join(contractors_10000plus, by = "ContributorName") %>% 
-  group_by(FilerLastName, FilerFirstName) %>% 
-  summarize(total_received = sum(ContributionAmt)) %>% 
-  arrange(desc(total_received))
-
-#write_csv(candidate_amt_received_bigmoney_contractors, "~/Autumn-2019/COMM177b/candidates_amt_received_bigmoney_contractors.csv")
-```
-Most of the top candidates money is coming from the largest contributors. This is somewhat logical, but indicates that it a small number of contracting companies that have outsized influence over lawmaker decisions.
-
-
-# Analysis: Which candidataes are receiving the most money from SPILLWAY developers?
-```{r}
-diversion_contractors <- 
-  tribble(~ContributorName, "AECOM", "STANTEC CONSULTING SERVICES", "KREBS LASALLE ENVIRONMENTAL, LLC")
-
-candidate_amt_received_spillway_contractors <-
-  contractor_contributors %>% 
-  inner_join(diversion_contractors, by = "ContributorName") %>% 
-  group_by(FilerLastName, FilerFirstName) %>% 
-  summarize(total_received = sum(ContributionAmt)) %>% 
-  arrange(desc(total_received))
-
-#write_csv(candidate_amt_received_spillway_contractors, "~/Autumn-2019/COMM177b/candidates_amt_received_spillway_contractors.csv")
-
-```
-
-
-# Analysis: Investigations into SPILLWAY CONTRACTORS giving extremely large amounts
-
-## AECOM giving to each candidate
-```{r}
-AECOM_candidates <-
-  AECOM  %>% 
-  arrange(FilerLastName) %>% 
-  mutate(available_cont = if_else(is.na(ContributionAmt), 0, ContributionAmt)) %>% 
-  group_by(FilerLastName, FilerFirstName) %>% 
-  summarize(total_reported = sum(available_cont)) %>% 
-  arrange(desc(total_reported))
-
-AECOM_candidates %>% head(10) %>% knitr::kable()
-write_csv(AECOM_candidates, "~/Autumn-2019/COMM177b/AECOM_candidate_reported_giving.csv")
-  
-```
-AECOM focused their giving on the Mayor of New Orleans, LaToya Cantrell (12,500), and the the governor, John Bel Edwards (15,000 between the PAC and the candidate directly). Further investigation is required into the role that these two offices play in the solicitation and selection of contractors for large environmental projects.
-
-Among the other politicians. 
-
-## AECOM total giving
-```{r}
-AECOM_total_giving <-
-  AECOM %>% 
-  summarize(total_AECOM = sum(ContributionAmt, na.rm = TRUE))
-
-AECOM_total_giving %>% knitr::kable()
-```
-
-## AECOM giving per year
-```{r}
-AECOM_yearly_giving <-
-  AECOM %>% 
-  mutate(year = year(ContributionDate)) %>% 
-  group_by(year) %>% 
-  summarize(yearly_giving = sum(ContributionAmt))
-
-AECOM_yearly_giving_plot <-
-  AECOM_yearly_giving %>% 
-  ggplot(mapping = aes(x = year, y = yearly_giving)) +
-  geom_line() + 
-  theme_bw() +
-  scale_x_discrete(limits = c(2004, 2008, 2012, 2014, 2015, 2016, 2017, 2018, 2019)) +
-  geom_vline(xintercept = 2017.5, color = "blue") +
-  annotate("text", x = 2017.6, y = 30000, label = "AECOM wins\nBarataria\ncontract", size = 2.5, hjust = 0) +
-  labs(
-    y = "Giving [$]",
-    x = "Year",
-    title = "Reported AECOM giving to LA elections per year",
-    subtitle = "Leading up to X$ Barataria contract, AECOM gave almost $40,000 to LA politicians"
-  ) 
-
-AECOM_yearly_giving_plot
-
-ggsave("AECOM_yearly_giving_plot.pdf", width = 7, height = 5, plot = AECOM_yearly_giving_plot)
-```
-
-
-## STANTEC giving to each candidate
-```{r}
-Stantec_candidates <-
-  contractor_contributors %>% 
-  filter(str_detect(ContributorName, "STANTEC")) %>% 
-  group_by(FilerLastName, FilerFirstName) %>% 
-  summarize(total_reported = sum(ContributionAmt)) %>% 
-  arrange(desc(total_reported))
-
-Stantec_candidates %>% knitr::kable()
-
-#write_csv(AECOM_candidates, "~/Autumn-2019/COMM177b/AECOM_candidate_reported_giving.csv")
-  
-```
-STANTEC appears to be giving largely to Move EBR PAC. Further investigation revealed that MovEBR is a major infrastructure tax package supported by many local engineering, construction, and consulting firms, given that it was likely to spur increased business. 
-
-## STANTEC total giving
-```{r}
-STANTEC_total_giving <-
-  contractor_contributors %>% 
-  filter(str_detect(ContributorName, "STANTEC")) %>% 
-  summarize(total_stantec = sum(ContributionAmt, na.rm = TRUE))
-```
-
-
-
-
-# Investigations into non-spillway contractors giving extremely large amounts
-```{r}
-CH2M_candidates <-
-  contractor_contributors %>% 
-  filter(str_detect(ContributorName, "CH2M")) %>% 
-  group_by(FilerLastName, FilerFirstName) %>% 
-  summarize(total_reported = sum(ContributionAmt)) %>% 
-  arrange(desc(total_reported))
-
-CH2M_candidates %>% knitr::kable()
-
-#write_csv(CH2M_candidates, "~/Autumn-2019/COMM177b/CH2M_candidates.csv")
-  
-```
-
-```{r}
-Royal_candidates <-
-  contractor_contributors %>% 
-  filter(str_detect(ContributorName, "ROYAL")) %>% 
-  group_by(FilerLastName, FilerFirstName) %>% 
-  summarize(total_reported = sum(ContributionAmt)) %>% 
-  arrange(desc(total_reported))
-
-Royal_candidates %>% knitr::kable()
-
-#write_csv(Royal_candidates, "~/Autumn-2019/COMM177b/Royal_candidates.csv")
-  
-```
-
-
-
-```{r}
-STANTEC_total_giving <-
-  contractor_contributors %>% 
-  filter(str_detect(ContributorName, "STANTEC")) %>% 
-  summarize(total_stantec = sum(ContributionAmt, na.rm = TRUE))
-```
-
-
-
-#Search lobbying database for contract companies
-```{r}
-contractor_lobbyists <-
-  lobbying %>% 
-  #this filter is copied directly from the campaign contribution search from above - should be continually copied for consistency.
-  filter(str_detect(Rep_Name, "STANTEC|STANTON CONSTRUCTABILITY|AECOM|GEC INC|GHD INC|LOUISIANA DIVERSION COMPANY|LAFITTE AREA|MOTT MACDONALD|NOLA PAC|NOLA ENGINEERING|WEEKS MARINE|SOIL EROSION SERVICES|PROFESSIONAL CONSTRUCTION SERVICES|SIMON AND DELANEY RESOURCE|COASTAL DREDGING COMPANY|SOIL EROSION|GRILLOT CONSTRUCTION|SEALEVEL CONSTRUCTION|HYDROTERRA TECHNOLOGIES|WILCO MARSH BUGGIES|MITCH'S LANDSCAPING|MITCHS LANDSCAPING|LUHR BRO|BAIRD & ASSOCIATES|JUSTIN REEVES|JUSTIN J REEVES|BERTUCCI CONTRACTING|C&C TECHNOLOGIES|APOLLO ENVIRONMENTAL STRATEGIES|TETRA TECH|HDR ENGINEERING|ROYAL ENGINEERING|ECOLOGICAL RESTORATION SERVICES|GREAT LAKES DREDGE|MAGNOLIA DREDGE|EARTHBALANCE|THE NATURE CONSERVANCY|CRESCENT CITY CONNECTION|MARITIME SERVICES GROUP|LCPA|GASERY AND ASSOCIATES|KEEP LOUISIANA BEAUTIFUL|EXPLUS|TRAILBLAZER RC & D|LEXLEE'S KIDS|NORTH LOUISIANA ECONOMIC|KREBS LASALLE ENVIRONMENTAL|LOUISIANA PROPERTY ACQUISITION|COASTAL ESTUARY SERVICES|GREGORY C RIGAMER|APTIM ENVIRONMENTAL|CH2M HILL|PBS&J|ROYAL ENGINEER|COASTAL ENGINEERING CONSULTANTS|VAN NESS FELDMAN|COUHIG PARTNERS|DUCKS UNLIMITED|NATIONAL AUDUBON SOCIETY|COALITION TO RESTORE COASTAL|INSTITUTE FOR FAMILY DEVELOPME|PAN AMERICAN ENGINEERS|DAN E CIVELLO|PLAQUEMINE PARISH|LTCI CONSULTING|DMS-DISASTER PLANNING|DISASTER METRICS|DULIN, WARD & DEWALD|NEWCORP|SCI RESEARCH AND CONSULTING|TRUFUND FINANCIAL SERVICES|LOUISIANA HOUSING CORPORATION|ZEHNDER COMMUNICATIONS|EMERGENT METHOD|DISASTER SERVICES CORP|DUPLANTIS DESIGN GROUP|SHULER CONSULTING|APACHE LA MINERALS|SISUNG SECURITIES|BACKFLOW PREVENTION|EMERGENT METHOD|STEPHEN B ORTEGO|ANTHONY ROUSSELL|DALE W WYBLE|CHARLES K. MONTGOMERY|SPENCER J OWENS|IMPROVED ANALYSIS THROUGH MODELING|COASTAL CONSERVATION|")) %>% 
-  arrange(desc(Rep_Name)) %>% 
-  select(Rep_Name, everything()) 
-
-write_csv(contractor_lobbyists, "~/Autumn-2019/COMM177b/contractor_lobbying.csv")
-
-```
-
-
-
-
